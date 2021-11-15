@@ -61,4 +61,4 @@ for (const file of eventFiles) {
 // -------------------------------------------------------------
 // Login to Discord with client's token
 // -------------------------------------------------------------
-client.login(process.env.TOKEN);
+client.login(process.env['TOKEN']!);

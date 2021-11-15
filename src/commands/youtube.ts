@@ -59,7 +59,7 @@ module.exports = {
 		let video = null;
 		const opts = {
 			maxResults: 1,
-			key: process.env.YOUTUBE_API_TOKEN,
+			key: process.env['YOUTUBE_API_TOKEN']!,
 			type: 'video',
 		};
 

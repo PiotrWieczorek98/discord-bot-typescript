@@ -19,7 +19,7 @@ module.exports = {
 		const message = 'Rebooting...';
 		await interaction.reply(message);
 		console.log(`Guild ${guildId}: ${message}`);
-		const heroku = new Heroku({ token: process.env.HEROKU_API_TOKEN });
+		const heroku = new Heroku({ token: process.env['HEROKU_API_TOKEN']! });
 		heroku.delete(`/apps/${globalVars.vars.HEROKU_APP}/dynos/${globalVars.vars.HEROKU_DINO}`);
 	},
 };
