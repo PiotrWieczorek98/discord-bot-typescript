@@ -2,7 +2,7 @@ import * as expressCore from 'express-serve-static-core';
 import { globalVars } from './GlobalVars';
 import { betsLeagueOfLegends } from './BetsLeagueOfLegends';
 import express from 'express';
-import { wakeUpDyno } from 'wakeUpDyno';
+import { wakeUpDyno } from '../helpers/wakeUpDyno';
 
 /**
  * Web HTTP endpoints
