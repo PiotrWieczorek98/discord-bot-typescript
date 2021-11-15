@@ -4,9 +4,9 @@
   "description": "Ah shit here we go again",
   "main": "main.ts",
   "scripts": {
-    "start-bot": "node dist/main.js",
+    "start": "node dist/main.js",
     "postinstall": "tsc",
-    "watch-node": "nodemon dist/index.js",
+    "watch-node": "nodemon dist/main.js",
     "watch-ts": "tsc -w",
     "deploy": "git add. && git commit -m Heroku && git push origin master",
     "deploy-dev-commands": "node --loader ts-node/esm src/helpers/deploy-dev-commands.ts",
