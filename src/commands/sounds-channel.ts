@@ -35,8 +35,8 @@ module.exports = {
 			return;
 		}
 		const channelId = results[0];
-		let dir = path.resolve(__dirname, globalVars.paths.DATA);
-		const filePath = dir + globalVars.vars.FILE_SOUNDS_CHANNEL;
+		let dir = path.resolve(__dirname, '..', globalVars.paths.DATA);
+		const filePath = `${dir}/${globalVars.vars.FILE_SOUNDS_CHANNEL}`;
 		globalVars.soundsChannel.set(guildId, channelId);
 		const resolve = await GuildDataManager.writeMapToFile(globalVars.soundsChannel, filePath);
 		if (!resolve) {

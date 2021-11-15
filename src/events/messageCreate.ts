@@ -23,7 +23,7 @@ module.exports = {
 				const soundsChannel = globalVars.soundsChannel.get(guildId);
 				if (soundsChannel == null || soundsChannel == message.channelId) {
 					// Download file to upload it to Azure
-					let dir = path.resolve(__dirname, globalVars.paths.SOUNDS);
+					let dir = path.resolve(__dirname, '..', globalVars.paths.SOUNDS);
 					const filePath = `${dir}/${message.guildId}/${attachment[1].name}`;
 					await GuildDataManager.downloadFromUrl(attachment[1].url, filePath);
 					const response = await Azure.uploadBlob(guildId, filePath);						

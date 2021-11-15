@@ -39,10 +39,10 @@ class GlobalVars {
 		};
 
 		this.paths = {
-			COMMANDS: 'commands/',
-			SOUNDS: 'sounds/',
-			DATA: 'data/',
-			EVENTS: 'events/',
+			COMMANDS: 'commands',
+			SOUNDS: 'sounds',
+			DATA: 'data',
+			EVENTS: 'events',
 		};
 
 		this.gambleConfig = {

@@ -18,8 +18,8 @@ module.exports = {
 	execute(guild:Guild) {
 		(async () => {
 			globalVars.soundsChannel.set(guild.id, 'null');
-			let dir = path.resolve(__dirname, globalVars.paths.DATA);
-			const filePath = dir + globalVars.vars.FILE_SOUNDS_CHANNEL;
+			let dir = path.resolve(__dirname, '..', globalVars.paths.DATA);
+			const filePath = `${dir}/${globalVars.vars.FILE_SOUNDS_CHANNEL}`;
 			await GuildDataManager.writeMapToFile(globalVars.soundsChannel, filePath);
 			await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, filePath);
 			console.log(`Guild: ${guild.id} added!`);

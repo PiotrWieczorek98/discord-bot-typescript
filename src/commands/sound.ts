@@ -64,8 +64,8 @@ module.exports = {
 		}
 
 		// Add to queue
-		let dir = path.resolve(__dirname, globalVars.paths.SOUNDS);
-		const fullPath = `${dir}${member.guild.id}/${soundName}`;
+		let dir = path.resolve(__dirname, '..', globalVars.paths.SOUNDS);
+		const fullPath = `${dir}/${member.guild.id}/${soundName}`;
 		const audio = new AudioSourceLocal(fullPath, soundName);
 		if (guildQueue) {
 			guildQueue.audioSources.push(audio);

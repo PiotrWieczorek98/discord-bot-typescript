@@ -26,7 +26,7 @@ module.exports = {
 			// ---------------------------------------------------------
 			console.log('\nGetting guilds\' sounds from container...');
 			// Check directories
-			let dir = path.resolve(__dirname, globalVars.paths.SOUNDS);
+			let dir = path.resolve(__dirname,'..', globalVars.paths.SOUNDS);
 			if (!fs.existsSync(dir)) {
 				fs.mkdirSync(dir);
 			}
@@ -44,7 +44,7 @@ module.exports = {
 				}
 
 				// Download all sounds
-				const path = `${dir}${guild.id}`;
+				const path = `${dir}/${guild.id}`;
 				if (!fs.existsSync(path)) {
 					fs.mkdirSync(path);
 				}
@@ -60,23 +60,25 @@ module.exports = {
 			// -------------------------------------------------------------
 			console.log('\nGetting guilds\' data from container...');
 			// Check directory
-			dir = path.resolve(__dirname, globalVars.paths.DATA);
+			dir = path.resolve(__dirname, '..', globalVars.paths.DATA);
 			if (!fs.existsSync(dir)) {
 				fs.mkdirSync(dir);
 			}
 
 			// Check container
 			if (!containers!.includes(globalVars.vars.CONTAINER_DATA)) {
+				console.log('\nCreating containers...');
 				await Azure.createContainer(globalVars.vars.CONTAINER_DATA);
 			}
 
 			// Download files
+			console.log('\nDownloading files...');
 			const filesMap = await Azure.downloadAllBlobs(globalVars.vars.CONTAINER_DATA, dir, true);
 			const files = [... filesMap.values()];
 
 			// Load sound channels data
 			let fileName = globalVars.vars.FILE_SOUNDS_CHANNEL;
-			let filePath = dir + fileName;
+			let filePath = `${dir}/${fileName}`;
 			let guilds: Map<string, string>;
 			if (files.includes(fileName)) {
 				guilds = await GuildDataManager.readMapFromFile(filePath);
@@ -99,7 +101,7 @@ module.exports = {
 			// Load League betting data
 
 			fileName = globalVars.vars.FILE_GAMBLERS;
-			filePath = dir + fileName;
+			filePath = `${dir}/${fileName}`;
 			let gamblers: Map<string, number>;
 			if (files.includes(fileName)) {
 				gamblers = await GuildDataManager.readMapFromFile(filePath);

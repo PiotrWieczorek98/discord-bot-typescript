@@ -20,7 +20,7 @@ export class GuildDataManager {
 		const serializedGuilds = JSON.stringify([...map.entries()]);
 		try{
 			await fsPromises.writeFile(filePath, serializedGuilds, {flag: 'w'});
-		console.log('Success!');
+			console.log('Success!');
 			return new Promise<boolean>((resolve) => {
 				resolve(true);
 			});
