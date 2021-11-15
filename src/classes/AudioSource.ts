@@ -15,8 +15,18 @@ export class AudioSourceLocal implements IAudioSource {
 	}
 
 	async getResource(){
-		const resource = createAudioResource(this.path, { inputType: StreamType.Arbitrary });
-		return resource;
+		let message: string;
+		let resource: AudioResource;
+		try{
+			resource = createAudioResource(this.path, { inputType: StreamType.Arbitrary });
+			message = 'success';
+		}
+		catch(error){
+			console.error((error as Error).message);
+			resource = createAudioResource(this.path, { inputType: StreamType.Arbitrary });
+			message = 'error';
+		}
+		return {resource, message};
 	}
 }
 
@@ -36,9 +46,20 @@ export class AudioSourceYoutube implements IAudioSource {
 
 	async getResource(){
 		let resource: AudioResource;
-		const stream = await playDl.stream(this.url);
-		resource = createAudioResource(stream.stream, { inputType : stream.type });
+		let ytStream: playDl.YouTubeStream;
+		let message: string;
+		try{
+			ytStream = await playDl.stream(this.url) as playDl.YouTubeStream;
+			message = 'success';
+		}
+		catch(error){
+			ytStream = await playDl.stream('https://www.youtube.com/watch?v=JqXg20sm_i4') as playDl.YouTubeStream;
+			console.error((error as Error).message);
+			message = 'error';
+		}
+		
+		resource = createAudioResource(ytStream.stream, { inputType : ytStream.type });
 
-		return resource;
+		return {resource, message};
 	}
 }

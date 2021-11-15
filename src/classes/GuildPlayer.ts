@@ -1,8 +1,8 @@
-import { AudioSourceYoutube, AudioSourceLocal } from './AudioSource';
-import { CommandInteraction, Interaction, MessageComponentInteraction } from 'discord.js';
+import { CommandInteraction, Interaction } from 'discord.js';
 import { GuildQueue } from './GuildQueue';
 import { AudioPlayer, AudioPlayerStatus, AudioResource } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
+import { response } from 'express';
 
 /**
  * Class responsible for audio player functions in voice channels
@@ -12,24 +12,24 @@ export class GuildPlayer {
 	 * Get next audio in queue
 	 * @param interaction
 	 * @param guildQueue
-	 * @param discordPlayer
+	 * @param audioPlayer
 	 */
-	static async playNextResource(interaction: Interaction, guildQueue: GuildQueue, discordPlayer: AudioPlayer) {
+	static async playNextResource(interaction: CommandInteraction, guildQueue: GuildQueue, audioPlayer: AudioPlayer) {
+		let message: string;
 		if (guildQueue.audioSources.length > 1) {
 			guildQueue.audioSources.shift();
 			const newSource = guildQueue.audioSources[0];
-			let resource: AudioResource;
-			let message: string;
-			try {
-				resource = await newSource.getResource();
-			}
-			catch (er) {
-				console.error(er);
-				message = 'Error caused by play-dl library! Try again.';
-				guildQueue.textChannel.send(message);
+
+			const result = await newSource.getResource();
+			const resource = result.resource;
+
+			if (result.message == 'error') {
+				message = 'Error caused by youtube API! (Probably age-restricted)... Try again.';
+				interaction.reply(message);
+				this.playNextResource(interaction, guildQueue, audioPlayer);
 				return;
 			}
-			discordPlayer.play(resource);
+			audioPlayer.play(resource);
 
 			message = `🔊 Playing: **${newSource.title}**`;
 			guildQueue.textChannel.send(message);
@@ -38,7 +38,7 @@ export class GuildPlayer {
 		else {
 			// Delete the queue
 			globalVars.globalQueue.delete(interaction.guild!.id);
-			discordPlayer.stop();
+			audioPlayer.stop();
 		}
 	}
 
@@ -48,9 +48,9 @@ export class GuildPlayer {
      * @param guildQueue
      */
 	static async playAudio(interaction: CommandInteraction, guildQueue: GuildQueue) {
-		const source = guildQueue.audioSources[0];
-		let resource: AudioResource;
 		let message: string;
+		const source = guildQueue.audioSources[0];
+		const audioPlayer = guildQueue.player;
 
 		if (!source) {
 			guildQueue.player.stop();
@@ -58,16 +58,15 @@ export class GuildPlayer {
 			return;
 		}
 
-		try {
-			resource = await source.getResource();
-		}
-		catch (er) {
-			console.error(er);
-			message = 'Error caused by play-dl library! Try again.';
-			guildQueue.textChannel.send(message);
+		const result = await source.getResource();
+		const resource = result.resource;
+
+		if (result.message == 'error') {
+			message = '❌Error caused by youtube API! (Probably age-restricted)... Try again.';
+			interaction.reply(message);
+			this.playNextResource(interaction, guildQueue, audioPlayer);
 			return;
 		}
-		const audioPlayer = guildQueue.player;
 		guildQueue.connection.subscribe(audioPlayer);
 		audioPlayer.play(resource);
 		// guildQueue.connection.rejoin({ selfDeaf: false });
