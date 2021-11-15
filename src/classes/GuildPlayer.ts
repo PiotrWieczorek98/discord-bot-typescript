@@ -1,13 +1,62 @@
-import { CommandInteraction, Interaction } from 'discord.js';
+import { CommandInteraction, Interaction, MessageEmbed } from 'discord.js';
 import { GuildQueue } from './GuildQueue';
 import { AudioPlayer, AudioPlayerStatus, AudioResource } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
 import { response } from 'express';
+import { IAudioSource } from 'IAudioSource';
 
 /**
  * Class responsible for audio player functions in voice channels
  */
 export class GuildPlayer {
+	
+	static async playAudio(audioPlayer: AudioPlayer, source: IAudioSource, interaction: CommandInteraction, guildQueue: GuildQueue){
+		const result = await source.getResource();
+		let message: string;
+		if (result.message == 'error') {
+			message = '❌Error caused by youtube API! (Probably age-restricted)... Try again.';
+			interaction.reply(message);
+			this.playNextResource(interaction, guildQueue, audioPlayer);
+			return;
+		}
+
+		audioPlayer.play(result.resource);
+		// guildQueue.connection.rejoin({ selfDeaf: false });
+
+		const messageEmbed = new MessageEmbed()
+		.setColor('#FF0000')
+		.setTitle(`🔊 ${source.title}`)
+		.setDescription(source.description)
+		.setThumbnail(source.thumbnail)
+		.setTimestamp()
+		.setFooter('','https://i.imgur.com/L8gH1y8.png');
+
+		message = `🔊 Playing: **${source.title}**`;
+		try{
+			await interaction.reply({embeds: [messageEmbed]});
+		}
+		catch(error){
+			await guildQueue.textChannel.send({embeds: [messageEmbed]});
+		}
+		console.log(message);
+
+		audioPlayer.on('error', error => {
+			console.error(error);
+		});
+		// After finish play next audio from queue
+		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
+			if (guildQueue) {
+				await this.playNextResource(interaction, guildQueue, audioPlayer);
+			}
+		});
+
+		// Handle error
+		audioPlayer.on('error', error => {
+			console.error(`Error: ${error.message} with resource ${error.resource.metadata}`);
+			this.playNextResource(interaction, guildQueue, audioPlayer);
+		});
+	}
+	
 	/**
 	 * Get next audio in queue
 	 * @param interaction
@@ -19,21 +68,7 @@ export class GuildPlayer {
 		if (guildQueue.audioSources.length > 1) {
 			guildQueue.audioSources.shift();
 			const newSource = guildQueue.audioSources[0];
-
-			const result = await newSource.getResource();
-			const resource = result.resource;
-
-			if (result.message == 'error') {
-				message = 'Error caused by youtube API! (Probably age-restricted)... Try again.';
-				interaction.reply(message);
-				this.playNextResource(interaction, guildQueue, audioPlayer);
-				return;
-			}
-			audioPlayer.play(resource);
-
-			message = `🔊 Playing: **${newSource.title}**`;
-			guildQueue.textChannel.send(message);
-			console.log(message);
+			this.playAudio(audioPlayer, newSource, interaction, guildQueue);
 		}
 		else {
 			// Delete the queue
@@ -47,8 +82,7 @@ export class GuildPlayer {
      * @param interaction
      * @param guildQueue
      */
-	static async playAudio(interaction: CommandInteraction, guildQueue: GuildQueue) {
-		let message: string;
+	static async startPlayer(interaction: CommandInteraction, guildQueue: GuildQueue) {
 		const source = guildQueue.audioSources[0];
 		const audioPlayer = guildQueue.player;
 
@@ -57,39 +91,7 @@ export class GuildPlayer {
 			globalVars.globalQueue.delete(interaction.guild!.id);
 			return;
 		}
-
-		const result = await source.getResource();
-		const resource = result.resource;
-
-		if (result.message == 'error') {
-			message = '❌Error caused by youtube API! (Probably age-restricted)... Try again.';
-			interaction.reply(message);
-			this.playNextResource(interaction, guildQueue, audioPlayer);
-			return;
-		}
 		guildQueue.connection.subscribe(audioPlayer);
-		audioPlayer.play(resource);
-		// guildQueue.connection.rejoin({ selfDeaf: false });
-
-		message = `🔊 Playing: **${source.title}**`;
-		await interaction.reply(message);
-		console.log(message);
-
-		audioPlayer.on('error', error => {
-			console.error(error);
-		});
-
-		// After finish play next audio from queue
-		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
-			if (guildQueue) {
-				await this.playNextResource(interaction, guildQueue, audioPlayer);
-			}
-		});
-
-		// Handle error
-		audioPlayer.on('error', error => {
-			console.error(`Error: ${error.message} with resource ${error.resource.metadata}`);
-			this.playNextResource(interaction, guildQueue, audioPlayer);
-		});
+		this.playAudio(audioPlayer,source,interaction, guildQueue);
 	}
 }

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, TextChannel, Util, VoiceChannel } from 'discord.js';
+import { CommandInteraction, GuildMember, MessageEmbed, TextChannel, Util, VoiceChannel } from 'discord.js';
 import search from 'youtube-search';
 import {GuildPlayer} from '../classes/GuildPlayer.js';
 import {GuildQueue} from'../classes/GuildQueue.js';
@@ -73,7 +73,9 @@ module.exports = {
 		}
 
 		// Add to queue
-		const audio = new AudioSourceYoutube(video.id, Util.escapeMarkdown(video.title), video.link);
+		const audio = new AudioSourceYoutube(video.id, Util.escapeMarkdown(video.title), 
+		video.link, video.description, video.thumbnails.default!.url);
+
 		let guildQueue = globalVars.globalQueue.get(member.guild.id);
 		if (guildQueue) {
 			guildQueue.audioSources.push(audio);
@@ -90,7 +92,7 @@ module.exports = {
 			globalVars.globalQueue.set(guildId, guildQueue);
 			guildQueue.audioSources.push(audio);
 			// Call player function
-			GuildPlayer.playAudio(interaction, guildQueue);
+			GuildPlayer.startPlayer(interaction, guildQueue);
 		}
 		catch (error) {
 			message = `I could not join the voice channel: ${error}`;

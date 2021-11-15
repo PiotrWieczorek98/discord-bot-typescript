@@ -81,7 +81,7 @@ module.exports = {
 			guildQueue = new GuildQueue((interaction.channel as TextChannel), voiceChannel);
 			globalVars.globalQueue.set(guildId, guildQueue);
 			guildQueue.audioSources.push(audio);
-			GuildPlayer.playAudio(interaction, guildQueue);
+			GuildPlayer.startPlayer(interaction, guildQueue);
 		}
 		catch (error) {
 			globalVars.globalQueue.delete(guildId);

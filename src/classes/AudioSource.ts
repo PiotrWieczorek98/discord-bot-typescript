@@ -8,10 +8,14 @@ import { IAudioSource } from '../interfaces/IAudioSource';
 export class AudioSourceLocal implements IAudioSource {
 	path: string;
 	title: string;
+	description: string;
+	thumbnail: string;
 	
 	constructor(path: string, title: string) {
 		this.path = path,
 		this.title = title;
+		this.description = 'Autistic screeches';
+		this.thumbnail = 'https://i1.sndcdn.com/artworks-000566136428-kdrjs4-t500x500.jpg';
 	}
 
 	async getResource(){
@@ -37,11 +41,15 @@ export class AudioSourceYoutube implements IAudioSource {
 	id: string;
 	title: string;
 	url: string;
+	description: string;
+	thumbnail: string;
 
-	constructor(id: string, title: string, url: string) {
+	constructor(id: string, title: string, url: string, description: string, thumbnail: string) {
 		this.id = id,
 		this.title = title,
 		this.url = url;
+		this.description = description;
+		this.thumbnail = thumbnail;
 	}
 
 	async getResource(){
