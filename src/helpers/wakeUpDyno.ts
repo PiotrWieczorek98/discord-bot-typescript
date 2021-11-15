@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const wakeUpDyno = (url: string, interval = 25, callback: Function) => {
+export function wakeUpDyno(url: string, interval = 25, callback: Function){
 	const milliseconds = interval * 60000;
 	setTimeout(() => {
 
@@ -24,7 +24,6 @@ const wakeUpDyno = (url: string, interval = 25, callback: Function) => {
 				callback ? console.log('Callback failed: ', err.message) : null;
 			}
 			finally {
-				// eslint-disable-next-line no-unsafe-finally
 				return wakeUpDyno(url, interval, callback);
 			}
 
@@ -32,5 +31,3 @@ const wakeUpDyno = (url: string, interval = 25, callback: Function) => {
 
 	}, milliseconds);
 };
-
-export {wakeUpDyno};

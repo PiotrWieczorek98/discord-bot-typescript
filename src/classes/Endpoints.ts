@@ -2,6 +2,7 @@ import * as expressCore from 'express-serve-static-core';
 import { globalVars } from './GlobalVars';
 import { betsLeagueOfLegends } from './BetsLeagueOfLegends';
 import express from 'express';
+import { wakeUpDyno } from 'wakeUpDyno';
 
 /**
  * Web HTTP endpoints
@@ -51,10 +52,8 @@ class Endpoints {
 
 		const listeningPort = process.env.PORT || port;
 		this.app.listen(listeningPort, () => {
-			const wakeUpDyno = require('../helpers/wakeUpDyno');
 			const DYNO_URL = 'https://discord-js-boi-bot.herokuapp.com/ping';
-
-			wakeUpDyno(DYNO_URL);
+			wakeUpDyno(DYNO_URL, 25, wakeUpDyno);
 			console.log('Listening on port: ', listeningPort);
 		});
 	};
