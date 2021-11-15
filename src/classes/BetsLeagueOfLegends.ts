@@ -5,6 +5,7 @@ import { BettingSession } from './BettingSession';
 import { globalVars } from './GlobalVars';
 import { BettingSessionBetEntry } from './BettingSessionBetEntry';
 import * as express from 'express';
+import path from 'path';
 
 // ------------------------------------------------------------------------------------
 // DELETE this
@@ -34,9 +35,9 @@ class BetsLeagueOfLegends {
 	 */
 	 async addGambler(gambler: GuildMember) {
 		this.gamblers.set(gambler.id, globalVars.gambleConfig.initialCredits);
-
-		await GuildDataManager.writeMapToFile(this.gamblers, globalVars.gambleConfig.fileGamblersPath);
-		await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, globalVars.gambleConfig.fileGamblersPath, true);
+		const dir = path.resolve(__dirname, globalVars.gambleConfig.fileGamblersPath);
+		await GuildDataManager.writeMapToFile(this.gamblers, dir);
+		await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, dir, true);
 	};
 
 	/**
@@ -56,8 +57,9 @@ class BetsLeagueOfLegends {
 	 * Update betting data
 	 */
 	async uploadGamblersToAzure() {
-		await GuildDataManager.writeMapToFile(this.gamblers, globalVars.gambleConfig.fileGamblersPath);
-		await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, globalVars.gambleConfig.fileGamblersPath, true);
+		const dir = path.resolve(__dirname, globalVars.gambleConfig.fileGamblersPath);
+		await GuildDataManager.writeMapToFile(this.gamblers, dir);
+		await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, dir, true);
 		console.log('Betters list updated.');
 	};
 

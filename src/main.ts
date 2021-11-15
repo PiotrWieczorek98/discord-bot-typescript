@@ -3,11 +3,13 @@ import * as fs from 'fs';
 import path from 'path';
 import { globalVars } from './classes/GlobalVars';
 import dotenv from 'dotenv';
+import { endpoints } from 'Endpoints';
 
 // -------------------------------------------------------------
 // Initialization
 // -------------------------------------------------------------
 dotenv.config();
+endpoints.setListener(globalVars.gambleConfig.port);
 
 // Create a new client instance
 const client = new Client({

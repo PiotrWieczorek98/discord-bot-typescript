@@ -1,6 +1,7 @@
 import {promises as fsPromises} from'fs';
 import * as https from 'https';
 import * as fs  from 'fs';
+import path from 'path';
 
 /**
  * Static class used to retrieve and upload data from cloud and manage local files.
@@ -18,7 +19,7 @@ export class GuildDataManager {
 		console.log('Writing map to file...');
 		const serializedGuilds = JSON.stringify([...map.entries()]);
 		try{
-			await fsPromises.writeFile(filePath, serializedGuilds);
+			await fsPromises.writeFile(filePath, serializedGuilds, {flag: 'w'});
 		console.log('Success!');
 			return new Promise<boolean>((resolve) => {
 				resolve(true);

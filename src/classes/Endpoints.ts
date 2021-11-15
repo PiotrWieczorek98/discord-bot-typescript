@@ -17,7 +17,6 @@ class Endpoints {
 	private constructor() {
 		this.app = express();
 		this.app.use(express.json());
-		this.setListener(globalVars.gambleConfig.port);
 	};
 	/**
      * React to web requests
