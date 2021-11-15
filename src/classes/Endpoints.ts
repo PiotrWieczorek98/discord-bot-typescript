@@ -50,7 +50,7 @@ class Endpoints {
 			res.send(data);
 		});
 
-		const listeningPort = process.env['PORT'] || port;
+		const listeningPort = process.env.PORT || port;
 		this.app.listen(listeningPort, () => {
 			const wakeUpDyno = require('../helpers/wakeUpDyno');
 			const DYNO_URL = 'https://discord-js-boi-bot.herokuapp.com/ping';
