@@ -1,5 +1,5 @@
-# Introducing BOI THE BOT JavaScript edition
-## Now with less garbage code! 🙍🏿‍♂️🔫👮🏻‍♂️
+# Introducing BOI THE BOT ~~JavaScript~~ TypeScript edition
+## It makes sense now! 🙍🏿‍♂️🔫👮🏻‍♂️
 
 ![Alt Text](https://c.tenor.com/u_uk_vEg_QIAAAAd/cute-dog.gif)
 
