@@ -46,15 +46,7 @@ module.exports = {
 			console.log(`Guild ${guildId}: ${message}`);
 			return;
 		}
-
-		// Check if phrase contains video id
-		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
-		const videoId = phrase.match(regex);
-		if (videoId) {
-			// Replace phrase to only contain video id, whole url gives bad results
-			phrase = videoId[1];
-		}
-
+	
 		// Search youtube
 		let video = null;
 		const opts = {
@@ -65,12 +57,19 @@ module.exports = {
 
 		const videos = await search(phrase.replace(/<(.+)>/g, '$1'), opts);
 		video = videos.results[0];
-
 		if (!video) {
 			message = '❌ No results!';
 			await interaction.reply({ content: message, ephemeral: true });
 			console.log(`Guild ${guildId}: ${message}`);
 			return;
+		}
+
+		// Check if search phrase contains video id
+		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
+		const videoId = phrase.match(regex);
+		if (videoId) {
+			// Replace phrase to only contain video id, whole url gives bad results
+			video.link = `https://www.youtube.com/watch?v=${videoId[1]}`;
 		}
 
 		// Add to queue
