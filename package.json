@@ -8,7 +8,7 @@
     "postinstall": "tsc",
     "watch-node": "nodemon dist/main.js",
     "watch-ts": "tsc -w",
-    "deploy": "git add. && git commit -m Heroku && git push origin master",
+    "deploy": "git add . && git commit -m Heroku && git push origin master",
     "deploy-dev-commands": "node --loader ts-node/esm src/helpers/deploy-dev-commands.ts",
     "deploy-global-commands": "node --loader ts-node/esm src/helpers/deploy-global-commands.ts"
   },
