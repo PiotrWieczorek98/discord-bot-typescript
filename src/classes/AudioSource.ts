@@ -38,14 +38,12 @@ export class AudioSourceLocal implements IAudioSource {
  * Class used to distinguish audio source
  */
 export class AudioSourceYoutube implements IAudioSource {
-	id: string;
 	title: string;
 	url: string;
 	description: string;
 	thumbnail: string;
 
-	constructor(id: string, title: string, url: string, description: string, thumbnail: string) {
-		this.id = id,
+	constructor(title: string, url: string, description: string, thumbnail: string) {
 		this.title = title,
 		this.url = url;
 		this.description = description;

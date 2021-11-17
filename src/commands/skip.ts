@@ -14,11 +14,19 @@ module.exports = {
 	 * @param interaction
 	 */
 	async execute(interaction: CommandInteraction) {
+		let message: string;
 		const guildId = interaction.guildId!;
-		const message = '⏭ Skipping song';
-		const player = globalVars.globalQueue.get(guildId)!.player;
-		player.stop();
-		await interaction.reply({ content: message, ephemeral: true });
+		const guildQueue = globalVars.globalQueue.get(guildId);
+
+		if(guildQueue == undefined){
+			message = 'Queue is already empty!';
+		}
+		else{
+			const audioPlayer = guildQueue.player;
+			message = '⏩ Skipped video!';
+			audioPlayer.stop();
+		}
+		await interaction.reply(message);
 		console.log(`Guild ${guildId}: ${message}`);
 	},
 };

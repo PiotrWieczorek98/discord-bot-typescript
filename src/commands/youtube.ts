@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, TextChannel, Util, VoiceChannel } from 'discord.js';
-import {GuildQueue} from'../classes/GuildQueue.js';
-import { AudioSourceYoutube } from '../classes/AudioSource.js';
-import { globalVars } from '../classes/GlobalVars.js';
-import youtubeSearch from "youtube-search";
-import { GuildPlayer } from 'GuildPlayer.js';
+import { CommandInteraction, GuildMember, Message, MessageReaction, Snowflake, TextChannel, User, Util, VoiceChannel } from 'discord.js';
+import {GuildQueue} from'../classes/GuildQueue';
+import { AudioSourceYoutube } from '../classes/AudioSource';
+import { globalVars } from '../classes/GlobalVars';
+import { GuildPlayer } from '../classes/GuildPlayer';
+import youtubeSearch from 'yt-search';
 
 // --------------------------------------------------------------------
 // Plays sound from youtube in voice chat or adds to queue
@@ -26,7 +26,7 @@ module.exports = {
 	 */
 	async execute(interaction: CommandInteraction) {
 		// Search parameter
-		let phrase = interaction.options.getString('phrase')!;
+		let searchPhrase = interaction.options.getString('phrase')!;
 		const guildId = interaction.guildId!;
 		let message: string;
 		const member = (interaction.member as GuildMember);
@@ -49,37 +49,23 @@ module.exports = {
 		}
 	
 		// Search youtube
-		let video: youtubeSearch.YouTubeSearchResults;
-		const opts:youtubeSearch.YouTubeSearchOptions = {
-			maxResults: 1,
-			key: process.env['YOUTUBE_API_TOKEN']!,
-			type: 'video',
-		};
-
-		const videos = await youtubeSearch('jsconf', opts,(err)=>{
-			if(err) return console.error(err);
-		});
-		video = videos.results[0];
-		if (!video) {
-			message = '❌ No results!';
-			await interaction.reply({ content: message, ephemeral: true });
-			console.log(`Guild ${guildId}: ${message}`);
-			return;
-		}
-
-		// Check if search phrase contains video id
-		// Sometimes Youtube will give a wrong result if you search with video ID
-		// so I had to alter given result url with passed ID
+		let video: youtubeSearch.VideoMetadataResult;
+		// Check if search phrase contains video id for direct search
 		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
-		const videoId = phrase.match(regex);
-		if (videoId) {
+		let regexResult = searchPhrase.match(regex);
+		if (regexResult) {
 			// Replace phrase to only contain video id, whole url gives bad results
-			video.link = `https://www.youtube.com/watch?v=${videoId[1]}`;
+			video = await youtubeSearch( { videoId: regexResult[1] } );
 		}
+		else{
+			const vidId = (await youtubeSearch( searchPhrase )).videos[0].videoId;
+			video = await youtubeSearch( { videoId: vidId } );
+
+		}		
 
 		// Create Audio Source
-		const audio = new AudioSourceYoutube(video.id, video.title, 
-		video.link, video.description, video.thumbnails.default!.url);
+		const audio = new AudioSourceYoutube(video.title, 
+		video.url, video.description, video.thumbnail);
 
 		// Check if guild's queue exists
 		// Insert if queue exist, create queue if it doesn't
@@ -89,6 +75,15 @@ module.exports = {
 			message = `☑️ **${audio.title}** has been added to the queue`;
 			await interaction.reply(message);
 			console.log(`Guild ${guildId}: ${message}`);
+
+			// Get messaage object to await reactions
+			const messageObject = await interaction.fetchReply() as Message;
+			messageObject.react('⏯️');
+			messageObject.react('⏹️');
+			const filter = (reaction: MessageReaction) => {
+				return reaction.emoji.name === '⏹️';
+			};
+			messageObject.awaitReactions({filter, time:600})
 		}
 		// Create queue if doesn't exist
 		else{
