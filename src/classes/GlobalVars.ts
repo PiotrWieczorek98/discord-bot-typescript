@@ -10,12 +10,17 @@ import { GuildSoundList } from './GuildSoundList';
  * Singleton to keep all global variables in one place
  */
 class GlobalVars {
+	// Singleton instance
 	private static _instance:GlobalVars;
+	// Discord client - should be attached asap after creation
 	client!: Client;
-    
+	// Contains queues for every guild
 	globalQueue: Map<string, GuildQueue>;
+	// Contains local audio files for every guild
 	globalSoundList: Map<string, GuildSoundList>;
-	soundsChannel: Map<string, string>;
+	// Text channels where automatic file upload to clound(Azure) happens
+	autoUploadChannel: Map<string, string>;
+	// Bot's commands
 	commands: Collection<string, any>;
 	
 	paths: IPaths;
@@ -25,7 +30,7 @@ class GlobalVars {
 	private constructor(){
 		this.globalQueue = new Map();
 		this.globalSoundList = new Map();
-		this.soundsChannel = new Map();
+		this.autoUploadChannel = new Map();
 		this.commands = new Collection();
 
 

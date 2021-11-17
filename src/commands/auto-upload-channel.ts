@@ -11,7 +11,7 @@ import { GuildDataManager } from '../classes/GuildDataManager';
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('sounds-channel')
+		.setName('auto-upload-channel')
 		.setDescription('Specify which channel should be tracked for uploaded sound files. Default is any channel')
 		.addStringOption(option => option
 			.setName('channel-id')
@@ -37,8 +37,8 @@ module.exports = {
 		const channelId = results[0];
 		let dir = path.resolve(__dirname, '..', globalVars.paths.DATA);
 		const filePath = `${dir}/${globalVars.vars.FILE_SOUNDS_CHANNEL}`;
-		globalVars.soundsChannel.set(guildId, channelId);
-		const resolve = await GuildDataManager.writeMapToFile(globalVars.soundsChannel, filePath);
+		globalVars.autoUploadChannel.set(guildId, channelId);
+		const resolve = await GuildDataManager.writeMapToFile(globalVars.autoUploadChannel, filePath);
 		if (!resolve) {
 			message = '❌ Error writing data!';
 			interaction.reply({ content: message, ephemeral: true });

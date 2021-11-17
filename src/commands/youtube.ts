@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, MessageEmbed, TextChannel, Util, VoiceChannel } from 'discord.js';
-import search from 'youtube-search';
-import {GuildPlayer} from '../classes/GuildPlayer.js';
+import { CommandInteraction, GuildMember, TextChannel, Util, VoiceChannel } from 'discord.js';
 import {GuildQueue} from'../classes/GuildQueue.js';
 import { AudioSourceYoutube } from '../classes/AudioSource.js';
 import { globalVars } from '../classes/GlobalVars.js';
+import youtubeSearch from "youtube-search";
+import { GuildPlayer } from 'GuildPlayer.js';
 
 // --------------------------------------------------------------------
 // Plays sound from youtube in voice chat or adds to queue
@@ -25,6 +25,7 @@ module.exports = {
 	 * @param interaction
 	 */
 	async execute(interaction: CommandInteraction) {
+		// Search parameter
 		let phrase = interaction.options.getString('phrase')!;
 		const guildId = interaction.guildId!;
 		let message: string;
@@ -48,14 +49,16 @@ module.exports = {
 		}
 	
 		// Search youtube
-		let video = null;
-		const opts = {
+		let video: youtubeSearch.YouTubeSearchResults;
+		const opts:youtubeSearch.YouTubeSearchOptions = {
 			maxResults: 1,
 			key: process.env['YOUTUBE_API_TOKEN']!,
 			type: 'video',
 		};
 
-		const videos = await search(phrase.replace(/<(.+)>/g, '$1'), opts);
+		const videos = await youtubeSearch('jsconf', opts,(err)=>{
+			if(err) return console.error(err);
+		});
 		video = videos.results[0];
 		if (!video) {
 			message = '❌ No results!';
@@ -65,6 +68,8 @@ module.exports = {
 		}
 
 		// Check if search phrase contains video id
+		// Sometimes Youtube will give a wrong result if you search with video ID
+		// so I had to alter given result url with passed ID
 		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
 		const videoId = phrase.match(regex);
 		if (videoId) {
@@ -72,34 +77,34 @@ module.exports = {
 			video.link = `https://www.youtube.com/watch?v=${videoId[1]}`;
 		}
 
-		// Add to queue
-		const audio = new AudioSourceYoutube(video.id, Util.escapeMarkdown(video.title), 
+		// Create Audio Source
+		const audio = new AudioSourceYoutube(video.id, video.title, 
 		video.link, video.description, video.thumbnails.default!.url);
 
+		// Check if guild's queue exists
+		// Insert if queue exist, create queue if it doesn't
 		let guildQueue = globalVars.globalQueue.get(member.guild.id);
 		if (guildQueue) {
 			guildQueue.audioSources.push(audio);
 			message = `☑️ **${audio.title}** has been added to the queue`;
 			await interaction.reply(message);
 			console.log(`Guild ${guildId}: ${message}`);
-			return;
 		}
-
-		// Join VC
-		try {
-			// Create queue if doesn't exist
-			guildQueue = new GuildQueue((interaction.channel as TextChannel), voiceChannel);
-			globalVars.globalQueue.set(guildId, guildQueue);
-			guildQueue.audioSources.push(audio);
-			// Call player function
-			GuildPlayer.startPlayer(interaction, guildQueue);
-		}
-		catch (error) {
-			message = `I could not join the voice channel: ${error}`;
-			console.error(`Guild ${guildId}: ${message}`);
-			globalVars.globalQueue.delete(guildId);
-			await interaction.reply(message);
-			return;
+		// Create queue if doesn't exist
+		else{
+			try {
+				guildQueue = new GuildQueue((interaction.channel as TextChannel), voiceChannel);
+				globalVars.globalQueue.set(guildId, guildQueue);
+				guildQueue.audioSources.push(audio);
+				// Call player function
+				GuildPlayer.startPlayer(interaction, guildQueue);
+			}
+			catch (error) {
+				message = `I could not join the voice channel: ${error}`;
+				console.error(`Guild ${guildId}: ${message}`);
+				globalVars.globalQueue.delete(guildId);
+				await interaction.reply(message);
+			}
 		}
 	},
 };

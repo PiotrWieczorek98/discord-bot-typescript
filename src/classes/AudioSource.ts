@@ -14,7 +14,7 @@ export class AudioSourceLocal implements IAudioSource {
 	constructor(path: string, title: string) {
 		this.path = path,
 		this.title = title;
-		this.description = 'Autistic screeches';
+		this.description = '...';
 		this.thumbnail = 'https://i1.sndcdn.com/artworks-000566136428-kdrjs4-t500x500.jpg';
 	}
 

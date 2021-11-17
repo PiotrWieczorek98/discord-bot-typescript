@@ -20,7 +20,7 @@ module.exports = {
 		// Check for sound upload
 		for (const attachment of message.attachments) {
 			if (attachment[1].contentType == 'audio/mpeg') {
-				const soundsChannel = globalVars.soundsChannel.get(guildId);
+				const soundsChannel = globalVars.autoUploadChannel.get(guildId);
 				if (soundsChannel == null || soundsChannel == message.channelId) {
 					// Download file to upload it to Azure
 					let dir = path.resolve(__dirname, '..', globalVars.paths.SOUNDS);

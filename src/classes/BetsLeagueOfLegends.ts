@@ -3,7 +3,7 @@ import {GuildDataManager} from './GuildDataManager';
 import { GuildMember, MessageEmbed, TextChannel } from 'discord.js';
 import { BettingSession } from './BettingSession';
 import { globalVars } from './GlobalVars';
-import { BettingSessionBetEntry } from './BettingSessionBetEntry';
+import { BetEntry } from './BetEntry';
 import * as express from 'express';
 import path from 'path';
 
@@ -41,20 +41,16 @@ class BetsLeagueOfLegends {
 	};
 
 	/**
-	 * Get gambler current credit amount
+	 * Return gambler(user) current credit amount or undefined if not registered
 	 * @param gamblerId
 	 */
 	getGamblerCredits(gamblerId: string) {
 		let result = this.gamblers.get(gamblerId);
-		if(result == undefined)
-		{
-			result = -1;
-		}
 		return result;
 	};
 
 	/**
-	 * Update betting data
+	 * Update gamblers list in Azure
 	 */
 	async uploadGamblersToAzure() {
 		const dir = path.resolve(__dirname, globalVars.gambleConfig.fileGamblersPath);
@@ -108,7 +104,7 @@ class BetsLeagueOfLegends {
 				this.gamblers.set(gambler.id, gamblerCredits - betValue);
 				bettingSession.jackpot += betValue;
 
-				const bet = new BettingSessionBetEntry(gambler.id,gambler.displayName,betValue, minute.toFixed(2));
+				const bet = new BetEntry(gambler.id,gambler.displayName,betValue, minute.toFixed(2));
 				bettingSession.bets.push(bet);
 
 				message = `**${gambler.displayName}** bets **${betValue}** credits, that **${summonerName}** will die in **${bet.minute}** minute.`;
@@ -121,21 +117,7 @@ class BetsLeagueOfLegends {
 	};
 
 	/**
-	 * Return bet for single gambler
-	 * @param bettingSession
-	 */
-	cancelBettingSession(bettingSession: BettingSession) {
-		bettingSession.isActive = false;
-		if (bettingSession.bets.length == 1) {
-			const betEntry = bettingSession.bets[0];
-			const credits = this.getGamblerCredits(betEntry.gamblerId) + betEntry.value;
-			this.gamblers.set(betEntry.gamblerId, credits);
-			this.uploadGamblersToAzure();
-		}
-	};
-
-	/**
-     * @todo Start new betting event
+     * Starts new betting session
      * @param summonerName
      * @param channelId
      */
@@ -147,7 +129,7 @@ class BetsLeagueOfLegends {
 	};
 
 	/**
-	 *
+	 * Ends ongoing betting session
 	 * @param targetSummoner
 	 * @param minute
 	 * @returns
@@ -199,6 +181,25 @@ class BetsLeagueOfLegends {
 		return message;
 	};
 
+	/**
+	 * Cancels ongoing betting session. Returns placed bets
+	 * @param bettingSession
+	 */
+		 cancelBettingSession(bettingSession: BettingSession) {
+			bettingSession.isActive = false;
+			if (bettingSession.bets.length == 1) {
+				const betEntry = bettingSession.bets[0];
+				const credits = this.getGamblerCredits(betEntry.gamblerId)! + betEntry.value;
+				this.gamblers.set(betEntry.gamblerId, credits);
+				this.uploadGamblersToAzure();
+			}
+		};
+
+
+	/**
+	 * Logs betting session to file
+	 * @param bettingSession
+	 */
 	logBettingSession(bettingSession: BettingSession) {
 		const fs = require('fs');
 		let row = `${bettingSession.summonerName};`;
@@ -215,6 +216,10 @@ class BetsLeagueOfLegends {
 		Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, globalVars.gambleConfig.fileHistoryPath, true);
 	};
 
+	/**
+	 * Called when endpoint /game_started is hit
+	 * @param req
+	 */
 	eventGameStarted(req: express.Request){
 		const data = req.body;
 		const summonerName = data.SummonerName;
@@ -247,6 +252,10 @@ class BetsLeagueOfLegends {
 		}
 	};
 
+	/**
+	 * Called when endpoint /death is hit
+	 * @param req
+	 */
 	eventSummonerDeath(req: express.Request){
 		const data = req.body;
 		let message = 'Something went wrong!';
@@ -280,6 +289,10 @@ class BetsLeagueOfLegends {
 		console.log(message);
 	}
 
+	/**
+	 * Called when endpoint /game_ended is hit
+	 * @param req
+	 */
 	eventGameEnded(req: express.Request){
 		const data = req.body;
 		const summonerName = data.VictimName;
@@ -296,6 +309,9 @@ class BetsLeagueOfLegends {
 		console.log('Received /death request for ', summonerName);
 	}
 
+	/**
+	 * Used to controll only one instance exists - singleton
+	 */
 	public static get Instance(){
 		return this._instance || (this._instance = new BetsLeagueOfLegends());
 	};

@@ -1,7 +1,7 @@
 import { TextChannel } from "discord.js";
 import { wait } from "../helpers/wait";
 import { betsLeagueOfLegends } from "./BetsLeagueOfLegends";
-import { BettingSessionBetEntry } from "./BettingSessionBetEntry";
+import { BetEntry } from "./BetEntry";
 import { globalVars } from "./GlobalVars";
 
 /**
@@ -13,7 +13,7 @@ import { globalVars } from "./GlobalVars";
 	isActive:boolean;
 	bettingAllowed:boolean;
 	jackpot:number;
-	bets: BettingSessionBetEntry[];
+	bets: BetEntry[];
 	channelId:string;
 
 	/**

@@ -1,4 +1,4 @@
-export class BettingSessionBetEntry{
+export class BetEntry{
     gamblerId: string;
     gamblerName: string;
     value: number;

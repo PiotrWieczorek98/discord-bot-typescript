@@ -83,7 +83,7 @@ module.exports = {
 			if (files.includes(fileName)) {
 				guilds = await GuildDataManager.readMapFromFile(filePath);
 				guilds.forEach((value, key) => {
-					globalVars.soundsChannel.set(key, value);
+					globalVars.autoUploadChannel.set(key, value);
 				});
 			}
 			else {
@@ -91,7 +91,7 @@ module.exports = {
 				guilds = new Map();
 				client.guilds.cache.forEach((guild) => {
 					guilds.set(guild.id, 'null');
-					globalVars.soundsChannel.set(guild.id, 'null');
+					globalVars.autoUploadChannel.set(guild.id, 'null');
 				});
 				await GuildDataManager.writeMapToFile(guilds, filePath);
 				await Azure.uploadBlob(globalVars.vars.CONTAINER_DATA, filePath);
