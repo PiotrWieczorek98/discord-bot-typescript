@@ -16,17 +16,16 @@ module.exports = {
 	async execute(interaction: CommandInteraction) {
 		let message: string;
 		const guildId = interaction.guildId!;
-		const guildQueue = globalVars.globalQueue.get(guildId);
+		const guildPlayer= globalVars.guildPlayers.get(guildId);
 
-		if(guildQueue == undefined){
+		if(guildPlayer == undefined || guildPlayer instanceof String){
 			message = 'Queue is already empty!';
 		}
 		else{
-			const audioPlayer = guildQueue.player;
 			message = '⏩ Skipped video!';
-			audioPlayer.stop();
+			guildPlayer.shiftQueue();
 		}
-		await interaction.reply(message);
+		await interaction.reply({content: message, ephemeral: true});
 		console.log(`Guild ${guildId}: ${message}`);
 	},
 };

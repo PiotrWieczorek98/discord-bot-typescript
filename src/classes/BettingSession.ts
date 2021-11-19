@@ -1,5 +1,5 @@
 import { TextChannel } from "discord.js";
-import { wait } from "../helpers/wait";
+import { wait } from "../functions/wait";
 import { betsLeagueOfLegends } from "./BetsLeagueOfLegends";
 import { BetEntry } from "./BetEntry";
 import { globalVars } from "./GlobalVars";

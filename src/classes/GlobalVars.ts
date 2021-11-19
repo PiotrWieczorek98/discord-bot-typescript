@@ -1,9 +1,8 @@
 import { Client, Collection } from 'discord.js';
-import path from 'path/posix';
+import { GuildPlayer } from '../classes/GuildPlayer';
 import { IGambleConfig } from '../interfaces/IGambleConfig';
 import { IPaths } from '../interfaces/IPaths';
 import { IVars } from '../interfaces/IVars';
-import { GuildQueue } from './GuildQueue';
 import { GuildSoundList } from './GuildSoundList';
 
 /**
@@ -15,7 +14,7 @@ class GlobalVars {
 	// Discord client - should be attached asap after creation
 	client!: Client;
 	// Contains queues for every guild
-	globalQueue: Map<string, GuildQueue>;
+	guildPlayers: Map<string, GuildPlayer | String>;
 	// Contains local audio files for every guild
 	globalSoundList: Map<string, GuildSoundList>;
 	// Text channels where automatic file upload to clound(Azure) happens
@@ -28,7 +27,7 @@ class GlobalVars {
 	gambleConfig: IGambleConfig;
 
 	private constructor(){
-		this.globalQueue = new Map();
+		this.guildPlayers = new Map();
 		this.globalSoundList = new Map();
 		this.autoUploadChannel = new Map();
 		this.commands = new Collection();

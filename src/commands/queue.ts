@@ -14,23 +14,24 @@ module.exports = {
 	 * @param interaction
 	 */
 	async execute(interaction: CommandInteraction) {
-		const member = (interaction.member as GuildMember);
-		const guildQueue = globalVars.globalQueue.get(member.guild.id);
 		const guildId = interaction.guildId!;
+		const member = (interaction.member as GuildMember);
+		const guildPlayer = globalVars.guildPlayers.get(member.guild.id);
 		let message = '';
-		if (!guildQueue) {
+		if (guildPlayer == undefined  || guildPlayer instanceof String) {
 			message = 'There is nothing playing.';
 			await interaction.reply(message);
 			console.log(`Guild ${guildId}: ${message}`);
 		}
 		else {
+			const guildQueue = guildPlayer.audioSources.slice(1,);
 			message = '**Queue:**\n';
 			let i = 0;
-			for (const source of guildQueue.audioSources) {
+			for (const source of guildPlayer.audioSources) {
 				i += 1;
-				message += `${i}. ${source.title}\n`;
+				message += `${i}. ${source.metadata.title}\n`;
 			}
-			message += `\n**Now playing:** ${guildQueue.audioSources[0].title}`;
+			message += `\n**Now playing:** ${guildPlayer.audioSources[0].metadata.title}`;
 			await interaction.reply(message);
 			console.log(`Guild ${guildId}: ${message}`);
 		}

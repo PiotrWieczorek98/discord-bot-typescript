@@ -1,10 +1,12 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, Message, MessageReaction, Snowflake, TextChannel, User, Util, VoiceChannel } from 'discord.js';
-import {GuildQueue} from'../classes/GuildQueue';
-import { AudioSourceYoutube } from '../classes/AudioSource';
+import { CommandInteraction, GuildMember, Message, TextChannel, VoiceChannel } from 'discord.js';
+import { AudioSourceYoutube } from '../classes/AudioSourceYoutube';
 import { globalVars } from '../classes/GlobalVars';
 import { GuildPlayer } from '../classes/GuildPlayer';
-import youtubeSearch from 'yt-search';
+import YouTube, { Video } from 'youtube-sr';
+import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
+import { handleUndefined } from '../functions/handleUndefined';
+import { wait } from '../functions/wait';
 
 // --------------------------------------------------------------------
 // Plays sound from youtube in voice chat or adds to queue
@@ -27,79 +29,106 @@ module.exports = {
 	async execute(interaction: CommandInteraction) {
 		// Search parameter
 		let searchPhrase = interaction.options.getString('phrase')!;
-		const guildId = interaction.guildId!;
+
 		let message: string;
+		const guildId = interaction.guildId!;
+		const textChannel = interaction.channel as TextChannel;
 		const member = (interaction.member as GuildMember);
+
+		// Check if guild's player exists
+		let createNew = false;
+		let guildPlayer = globalVars.guildPlayers.get(member.guild.id);
+
+		// Set flag if player is initailized to avoid duplicates
+		if(guildPlayer == undefined){
+			globalVars.guildPlayers.set(member.guild.id, new String('placeholder'));	
+			createNew = true;
+		}
+
+		message = `Processing...`;
+		await interaction.reply(message);
+
 
 		// Check for abnormalities
 		const voiceChannel = (member.voice.channel as VoiceChannel);
-		if (!voiceChannel) {
-			message = 'Join voice channel first.';
-			await interaction.reply({ content: message, ephemeral: true });
-			console.log(`Guild ${guildId}: ${message}`);
-			return;
-		}
+		message = 'Join voice channel first.';
+		if(handleUndefined(voiceChannel, message, textChannel)) return;
+
 		const clientMember = interaction.guild?.members.cache.get(interaction.client.user!.id)!;
 		const permissions = voiceChannel.permissionsFor(clientMember)!;
+		message = '❌ Not sufficient permissions!';
 		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-			message = '❌ Not sufficient permissions!';
-			await interaction.reply({ content: message, ephemeral: true });
-			console.log(`Guild ${guildId}: ${message}`);
+			handleUndefined(undefined, message, textChannel);
 			return;
 		}
 	
 		// Search youtube
-		let video: youtubeSearch.VideoMetadataResult;
-		// Check if search phrase contains video id for direct search
+		let video: Video;
 		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
 		let regexResult = searchPhrase.match(regex);
 		if (regexResult) {
-			// Replace phrase to only contain video id, whole url gives bad results
-			video = await youtubeSearch( { videoId: regexResult[1] } );
+			const url = `https://www.youtube.com/watch${regexResult[0]}`;
+			video = await YouTube.getVideo(url);
 		}
 		else{
-			const vidId = (await youtubeSearch( searchPhrase )).videos[0].videoId;
-			video = await youtubeSearch( { videoId: vidId } );
+			video = await YouTube.searchOne(searchPhrase);
 
 		}		
 
 		// Create Audio Source
-		const audio = new AudioSourceYoutube(video.title, 
-		video.url, video.description, video.thumbnail);
+		const placeholder = '-placeholder-';
+		const metadata: IAudioSourceMetadata = {
+			title: video.title ||  placeholder,
+			path: video.url,
+			description: video.description || placeholder,
+			thumbnail: video.thumbnail?.url || placeholder,
+		};
 
-		// Check if guild's queue exists
-		// Insert if queue exist, create queue if it doesn't
-		let guildQueue = globalVars.globalQueue.get(member.guild.id);
-		if (guildQueue) {
-			guildQueue.audioSources.push(audio);
-			message = `☑️ **${audio.title}** has been added to the queue`;
-			await interaction.reply(message);
+		// Check if resource was created successfully
+		const audioSource = await AudioSourceYoutube.create(metadata);
+		message = '❌ Error while creating resource!';
+		if(handleUndefined(audioSource.resource, message, textChannel)) return;
+
+
+		// Create player if doesn't exist
+		if(createNew){
+			message = `Initializing player...`;
+			globalVars.guildPlayers.set(member.guild.id, new String('placeholder'));
+			await interaction.editReply(message);
+			console.log(`Guild ${guildId}: ${message}`);
+			
+			await GuildPlayer.createGuildPlayer(interaction, audioSource);	
+		}
+		else if (guildPlayer instanceof GuildPlayer) {
+			// Delete reply
+			const reply = await interaction.fetchReply() as Message;
+			await reply.delete();
+			
+			guildPlayer.addToQueue(audioSource);
+		}
+		// Wait if player is being initialized
+		else if(guildPlayer instanceof String){
+			message = `waiting for player initialization...`;
+			await interaction.editReply(message);
 			console.log(`Guild ${guildId}: ${message}`);
 
-			// Get messaage object to await reactions
-			const messageObject = await interaction.fetchReply() as Message;
-			messageObject.react('⏯️');
-			messageObject.react('⏹️');
-			const filter = (reaction: MessageReaction) => {
-				return reaction.emoji.name === '⏹️';
+			// Function to await player initialization
+			const waitLoop = async ()=> {
+				await wait(1000);
+				// Check if player is now initialized
+				const player = globalVars.guildPlayers.get(guildId);
+				// repeat if not
+				if(player instanceof String){
+				await waitLoop();
+				}
+				// Add to queue if player is initialized
+				else{
+					const reply = await interaction.fetchReply() as Message;
+					await reply.delete();
+					player!.addToQueue(audioSource);
+				}
 			};
-			messageObject.awaitReactions({filter, time:600})
-		}
-		// Create queue if doesn't exist
-		else{
-			try {
-				guildQueue = new GuildQueue((interaction.channel as TextChannel), voiceChannel);
-				globalVars.globalQueue.set(guildId, guildQueue);
-				guildQueue.audioSources.push(audio);
-				// Call player function
-				GuildPlayer.startPlayer(interaction, guildQueue);
-			}
-			catch (error) {
-				message = `I could not join the voice channel: ${error}`;
-				console.error(`Guild ${guildId}: ${message}`);
-				globalVars.globalQueue.delete(guildId);
-				await interaction.reply(message);
-			}
+			await waitLoop();
 		}
 	},
 };

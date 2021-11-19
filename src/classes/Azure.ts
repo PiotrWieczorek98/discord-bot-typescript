@@ -1,6 +1,6 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import * as fs  from 'fs';
-const path  = require ('path');
+import path from 'path';
 
 /**
  * This Class allows communication with azure storage
@@ -69,6 +69,7 @@ export class Azure {
 	 * @returns 
 	 */
 	static async uploadBlob(containerName: string, filePath: string, overwrite = false) {
+		filePath = path.normalize(filePath);
 		const fileName = path.parse(filePath).base;
 		try {
 			// Check if file exists
@@ -101,7 +102,8 @@ export class Azure {
 			const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
 			// Upload the created file
-			await blockBlobClient.uploadFile(filePath);
+			const resp = await blockBlobClient.uploadFile(filePath);
+			if(resp.errorCode) console.log(resp.errorCode)
 			return new Promise<string>((resolve) => {
 				resolve('👍');
 			});

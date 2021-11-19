@@ -1,12 +1,13 @@
 import { AudioResource } from "@discordjs/voice";
+import { IAudioSourceMetadata } from "./IAudioSourceMetadata";
+
+export enum SourceType {
+    Youtube,
+    Local,
+}
 
 export interface IAudioSource{
-    title: string;
-    description: string;
-	thumbnail: string;
-
-    getResource():  Promise<{
-        resource: AudioResource<unknown>;
-        message: string;
-    }>,
+    sourceType: SourceType;
+    metadata: IAudioSourceMetadata;
+    resource: AudioResource<unknown> | undefined;
 }

@@ -9,8 +9,8 @@
     "watch-node": "nodemon dist/main.js",
     "watch-ts": "tsc -w",
     "deploy": "git add . && git commit -m Heroku && git push origin master",
-    "deploy-dev-commands": "node --loader ts-node/esm src/helpers/deploy-dev-commands.ts",
-    "deploy-global-commands": "node --loader ts-node/esm src/helpers/deploy-global-commands.ts"
+    "deploy-dev-commands": "node dist/helpers/deploy-dev-commands.js",
+    "deploy-global-commands": "node dist/helpers/deploy-global-commands.js"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "@discordjs/opus": "^0.5.3",
     "@discordjs/rest": "^0.1.0-canary.0",
     "@discordjs/voice": "^0.7.5",
+    "ascii-bar": "^1.0.3",
     "discord-api-types": "^0.23.1",
     "discord.js": "^13.3.1",
     "dotenv": "^10.0.0",
@@ -43,7 +44,7 @@
     "play-dl": "^1.0.3",
     "prism-media": "^1.3.2",
     "ts-node": "^10.4.0",
-    "yt-search": "^2.10.2"
+    "youtube-sr": "^4.1.9"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",

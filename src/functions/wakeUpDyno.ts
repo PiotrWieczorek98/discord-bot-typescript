@@ -1,17 +1,18 @@
 import fetch from 'node-fetch';
 
-export function wakeUpDyno(url: string, interval = 25, callback: Function){
+export function wakeUpDyno(interval = 25, callback: Function){
 	const milliseconds = interval * 60000;
 	setTimeout(() => {
 
 		try {
 			console.log('setTimeout called.');
 			// HTTP GET request to the dyno's url
-			fetch(url).then(() => console.log(`Fetching ${url}.`));
+			const DYNO_URL = 'https://discord-js-boi-bot.herokuapp.com/ping';
+			fetch(DYNO_URL).then(() => console.log(`Fetching ${DYNO_URL}.`));
 		}
 		catch (error) {
 			const err = error as Error;
-			console.log(`Error fetching ${url}: ${err.message} 
+			console.log(`Error fetching: ${err.message} 
             Will try again in ${interval} minutes...`);
 		}
 		finally {
@@ -24,7 +25,7 @@ export function wakeUpDyno(url: string, interval = 25, callback: Function){
 				callback ? console.log('Callback failed: ', err.message) : null;
 			}
 			finally {
-				return wakeUpDyno(url, interval, callback);
+				return wakeUpDyno(interval, callback);
 			}
 
 		}
