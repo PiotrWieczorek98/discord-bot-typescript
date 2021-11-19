@@ -4,7 +4,7 @@ import {Azure} from './Azure.js';
  * Class represents guild's sound list stored in Azure.
  * Used to play sounds in voice chat.
  */
-export class GuildSoundList {
+export class GuildLocalAudioFiles {
 	guildId:string;
 	soundList:Map<number, string>;
 	path: string;

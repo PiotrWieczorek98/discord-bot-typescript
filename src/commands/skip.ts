@@ -16,7 +16,7 @@ module.exports = {
 	async execute(interaction: CommandInteraction) {
 		let message: string;
 		const guildId = interaction.guildId!;
-		const guildPlayer= globalVars.guildPlayers.get(guildId);
+		const guildPlayer= globalVars.guildsPlayers.get(guildId);
 
 		if(guildPlayer == undefined || guildPlayer instanceof String){
 			message = 'Queue is already empty!';

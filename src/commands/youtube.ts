@@ -35,15 +35,7 @@ module.exports = {
 		const textChannel = interaction.channel as TextChannel;
 		const member = (interaction.member as GuildMember);
 
-		// Check if guild's player exists
-		let createNew = false;
-		let guildPlayer = globalVars.guildPlayers.get(member.guild.id);
 
-		// Set flag if player is initailized to avoid duplicates
-		if(guildPlayer == undefined){
-			globalVars.guildPlayers.set(member.guild.id, new String('placeholder'));	
-			createNew = true;
-		}
 
 		message = `Processing...`;
 		await interaction.reply(message);
@@ -91,44 +83,20 @@ module.exports = {
 
 
 		// Create player if doesn't exist
-		if(createNew){
+		let guildPlayer = globalVars.guildsPlayers.get(member.guild.id);
+		if(guildPlayer == undefined){
 			message = `Initializing player...`;
-			globalVars.guildPlayers.set(member.guild.id, new String('placeholder'));
 			await interaction.editReply(message);
 			console.log(`Guild ${guildId}: ${message}`);
 			
 			await GuildPlayer.createGuildPlayer(interaction, audioSource);	
 		}
-		else if (guildPlayer instanceof GuildPlayer) {
+		else {
 			// Delete reply
 			const reply = await interaction.fetchReply() as Message;
 			await reply.delete();
 			
 			guildPlayer.addToQueue(audioSource);
-		}
-		// Wait if player is being initialized
-		else if(guildPlayer instanceof String){
-			message = `waiting for player initialization...`;
-			await interaction.editReply(message);
-			console.log(`Guild ${guildId}: ${message}`);
-
-			// Function to await player initialization
-			const waitLoop = async ()=> {
-				await wait(1000);
-				// Check if player is now initialized
-				const player = globalVars.guildPlayers.get(guildId);
-				// repeat if not
-				if(player instanceof String){
-				await waitLoop();
-				}
-				// Add to queue if player is initialized
-				else{
-					const reply = await interaction.fetchReply() as Message;
-					await reply.delete();
-					player!.addToQueue(audioSource);
-				}
-			};
-			await waitLoop();
 		}
 	},
 };

@@ -24,7 +24,7 @@ module.exports = {
 		const guildId = interaction.guildId!;
 
 		// Get Guild's sound list
-		const guildSoundList = globalVars.globalSoundList.get(guildId)!;
+		const guildSoundList = globalVars.guildsLocalAudioFiles.get(guildId)!;
 		if (!guildSoundList) {
 			message = '❌ Error while getting guild\'s sound list!';
 			await interaction.reply({ content: message, ephemeral: true });

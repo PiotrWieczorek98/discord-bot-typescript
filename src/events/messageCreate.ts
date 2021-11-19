@@ -30,7 +30,7 @@ module.exports = {
 					message.react(response);
 
 					// Update sound list
-					const guildSoundList = globalVars.globalSoundList.get(guildId)!;
+					const guildSoundList = globalVars.guildsLocalAudioFiles.get(guildId)!;
 					guildSoundList.downloadSounds();
 				}
 			}

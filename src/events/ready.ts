@@ -1,4 +1,4 @@
-import {GuildSoundList} from '../classes/GuildSoundList.js';
+import {GuildLocalAudioFiles} from '../classes/GuildLocalAudioFiles.js';
 import * as fs from 'fs';
 import {Azure} from '../classes/Azure';
 import {GuildDataManager} from '../classes/GuildDataManager';
@@ -49,10 +49,10 @@ module.exports = {
 					fs.mkdirSync(path);
 				}
 
-				const guildSoundList = new GuildSoundList(guild.id, path);
+				const guildSoundList = new GuildLocalAudioFiles(guild.id, path);
 				await guildSoundList.downloadSounds();
 
-				globalVars.globalSoundList.set(guild.id, guildSoundList);
+				globalVars.guildsLocalAudioFiles.set(guild.id, guildSoundList);
 			}
 
 			// ------------------------------------------------------------

@@ -3,7 +3,7 @@ import { GuildPlayer } from '../classes/GuildPlayer';
 import { IGambleConfig } from '../interfaces/IGambleConfig';
 import { IPaths } from '../interfaces/IPaths';
 import { IVars } from '../interfaces/IVars';
-import { GuildSoundList } from './GuildSoundList';
+import { GuildLocalAudioFiles } from './GuildLocalAudioFiles';
 
 /**
  * Singleton to keep all global variables in one place
@@ -13,23 +13,30 @@ class GlobalVars {
 	private static _instance:GlobalVars;
 	// Discord client - should be attached asap after creation
 	client!: Client;
-	// Contains queues for every guild
-	guildPlayers: Map<string, GuildPlayer | String>;
+	// Contains queues for every guild - string to signalize initialization
+	//  maps <guildId, GuildPlayer>
+	guildsPlayers: Map<string, GuildPlayer>;
 	// Contains local audio files for every guild
-	globalSoundList: Map<string, GuildSoundList>;
+	//  maps <guildId, GuildLocalAudioFiles>
+	guildsLocalAudioFiles: Map<string, GuildLocalAudioFiles>;
 	// Text channels where automatic file upload to clound(Azure) happens
+	// maps <guildId, channelId>
 	autoUploadChannel: Map<string, string>;
 	// Bot's commands
 	commands: Collection<string, any>;
+	// Contains commands on cooldown
+	// Set<guildId>
+	guildsCommandsCooldown: Set<string>;
 	
 	paths: IPaths;
 	vars: IVars;
 	gambleConfig: IGambleConfig;
 
 	private constructor(){
-		this.guildPlayers = new Map();
-		this.globalSoundList = new Map();
+		this.guildsPlayers = new Map();
+		this.guildsLocalAudioFiles = new Map();
 		this.autoUploadChannel = new Map();
+		this.guildsCommandsCooldown = new Set();
 		this.commands = new Collection();
 
 

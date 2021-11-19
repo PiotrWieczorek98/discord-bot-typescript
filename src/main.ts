@@ -32,10 +32,24 @@ for (const file of commandFiles) {
 
 // Command listeners
 client.on('interactionCreate', async interaction => {
+	// Check if command exist
 	if (!interaction.isCommand()) return;
 	const command = globalVars.commands.get(interaction.commandName);
 	if (!command) return;
+
+	// Check if command is on cooldown
+	if( globalVars.guildsCommandsCooldown.has(interaction.guildId)){
+		const message = 'Commands are on cooldown! Wait a second and try again!';
+		interaction.reply({content:message, ephemeral: true});
+		return;
+	}
+	// Execute and add cooldown
 	try {
+		globalVars.guildsCommandsCooldown.add(interaction.guildId);
+		setTimeout(() => {
+			// Removes the user from the set after a minute
+			globalVars.guildsCommandsCooldown.delete(interaction.guildId);
+		  }, 2000);
 		console.log(`Guild ${interaction.guild!.id}: ${interaction.commandName}`);
 		await command.execute(interaction);
 	}

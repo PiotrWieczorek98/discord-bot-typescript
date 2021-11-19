@@ -39,7 +39,7 @@ export class GuildPlayer {
 	 */
 	static async createGuildPlayer(interaction:CommandInteraction, source: IAudioSource) {
 		const newGuildPlayer = new GuildPlayer(interaction);
-		globalVars.guildPlayers.set(interaction.guildId, newGuildPlayer);
+		globalVars.guildsPlayers.set(interaction.guildId, newGuildPlayer);
 
 		// Add source to queue
 		newGuildPlayer.audioSources.push(source);
@@ -124,7 +124,7 @@ export class GuildPlayer {
 	}
 		this.audioPlayer.removeAllListeners();
 		this.audioPlayer.stop();
-		globalVars.guildPlayers.delete(this.guildId);
+		globalVars.guildsPlayers.delete(this.guildId);
 	}
 
 	/**

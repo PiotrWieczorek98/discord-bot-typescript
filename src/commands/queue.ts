@@ -16,7 +16,7 @@ module.exports = {
 	async execute(interaction: CommandInteraction) {
 		const guildId = interaction.guildId!;
 		const member = (interaction.member as GuildMember);
-		const guildPlayer = globalVars.guildPlayers.get(member.guild.id);
+		const guildPlayer = globalVars.guildsPlayers.get(member.guild.id);
 		let message = '';
 		if (guildPlayer == undefined  || guildPlayer instanceof String) {
 			message = 'There is nothing playing.';

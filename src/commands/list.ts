@@ -35,7 +35,7 @@ module.exports = {
 	 */
 	async execute(interaction: CommandInteraction) {
 		const guildId = interaction.guildId!;
-		const soundList = globalVars.globalSoundList.get(guildId)!.soundList;
+		const soundList = globalVars.guildsLocalAudioFiles.get(guildId)!.soundList;
 
 		await interaction.reply({ content: '🙉', ephemeral: true });
 		console.log(`Guild ${interaction.guildId}: Sent sound list`);
