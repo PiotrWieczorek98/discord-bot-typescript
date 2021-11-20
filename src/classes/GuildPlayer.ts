@@ -2,6 +2,7 @@ import { CommandInteraction, GuildMember, Message, MessageEmbed, MessageReaction
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
 import { AudioSource } from './AudioSource';
+import { wait } from '../functions/wait';
 
 /**
  * Class responsible for audio player functions in voice channels
@@ -16,7 +17,10 @@ export class GuildPlayer {
 	audioSources: Array<AudioSource>;
 
 	private ready: boolean;
-	private embedUpdater!: NodeJS.Timer; 
+	private progressBarTimer!: NodeJS.Timer; 
+
+	private idler!: NodeJS.Timer;
+	private idleTimer!: number; 
 
 	private constructor(interaction: CommandInteraction){
 		this.ready = false;
@@ -29,7 +33,6 @@ export class GuildPlayer {
 			guildId: this.voiceChannel.guild.id,
 			adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
 		});
-
 		this.audioPlayer = createAudioPlayer();
 	}
 
@@ -42,13 +45,18 @@ export class GuildPlayer {
 		const newGuildPlayer = new GuildPlayer(interaction);
 		globalVars.guildsPlayers.set(interaction.guildId, newGuildPlayer);
 
-		// Add source to queue
-		newGuildPlayer.audioSources.push(source);
+		// Subscribe voice connection to player
+		newGuildPlayer.connection.subscribe(newGuildPlayer.audioPlayer);// Start playback
 
 		// Display embed message - acts as player view
 		const embed = newGuildPlayer.prepareEmbed();
 		newGuildPlayer.messageHandle = await (interaction.channel as TextChannel).send({embeds:[embed]});
-		setInterval(newGuildPlayer.updateProgressBar, 1000);
+
+		// Start player
+		newGuildPlayer.addToQueue(source);
+		// Setup trackers
+		await newGuildPlayer.setupTrackers();
+		newGuildPlayer.setupAudioPlayerEvents();
 
 		// Delete reply
 		const reply = await interaction.fetchReply() as Message;
@@ -58,16 +66,7 @@ export class GuildPlayer {
 		catch{
 			console.log(`${interaction.guildId}: reply already deleted.`);
 		}
-				
-		// Subscribe voice connection to player
-		newGuildPlayer.connection.subscribe(newGuildPlayer.audioPlayer);
 
-		// Start playback
-		await newGuildPlayer.playAudio(newGuildPlayer.audioSources[0]);
-		await newGuildPlayer.setupTrackers();
-		newGuildPlayer.setupAudioPlayerEvents();
-
-		newGuildPlayer.ready = true;
 		return newGuildPlayer;
 	}
 
@@ -93,7 +92,7 @@ export class GuildPlayer {
 		// Stop if queue is empty
 		this.audioSources.shift();
 		if (this.audioSources.length == 0) {
-			this.stopPlayer();
+			this.setPlayerIdler();
 		}
 		// Play next audio source if not
 		else{
@@ -110,17 +109,43 @@ export class GuildPlayer {
 	 */
 	async addToQueue(source: AudioSource){
 		this.audioSources.push(source);
+		if(this.audioSources.length == 1){
+			this.playAudio(this.audioSources[0]);
+			this.ready = true;
+		}
 		const embed = this.prepareEmbed();
 		this.messageHandle.edit({embeds: [embed]});
 
 		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
 		console.log(`Guild ${this.guildId}: ${message}`);
+
+		// Remove idler
+		clearInterval(this.idler);
+	}
+
+	/**
+	 * Makes player wait a minute idling
+	 */
+	setPlayerIdler(){
+		this.audioSources = [];
+		this.audioPlayer.stop();
+		this.idleTimer = 10;
+		this.idler = setInterval(function(guildPlayer: GuildPlayer) {
+			// If the count down is finished, write some text
+			if (guildPlayer.idleTimer < 1) {
+				guildPlayer.removePlayer();
+			  	clearInterval(guildPlayer.idler);
+			}
+			else{
+				guildPlayer.idleTimer = guildPlayer.idleTimer -1;
+			}
+		  }, 1000, this);
 	}
 
 	/**
 	 * Stops and deletes audio player
 	 */
-	stopPlayer(){
+	removePlayer(){
 		this.ready = false;
 	if(!this.messageHandle.deleted){
 		this.connection.rejoin({ selfDeaf: false,
@@ -145,7 +170,7 @@ export class GuildPlayer {
 					await this.shiftQueue();
 				}
 				else{
-					this.stopPlayer();
+					this.setPlayerIdler();
 				}
 			}
 		});
@@ -158,7 +183,7 @@ export class GuildPlayer {
 				await this.shiftQueue();
 			}
 			else{
-				this.stopPlayer();
+				this.setPlayerIdler();
 			}
 		});
 	}
@@ -196,7 +221,7 @@ export class GuildPlayer {
 				await this.shiftQueue();
 			}
 			else if(reaction.emoji.name == '⏹️'){
-				this.stopPlayer();
+				this.setPlayerIdler();
 			}
 		});
 
@@ -257,8 +282,9 @@ export class GuildPlayer {
 		return messageEmbed;
 	}
 
-	updateProgressBar(){
-		if(!this.messageHandle.deleted){
+	async updateProgressBar(){
+		await wait(1000);
+		if(!this.messageHandle?.deleted){
 			const embed = this.messageHandle.embeds[0];
 			const fields = embed.fields;
 			const progressBarField = fields[0];
@@ -266,7 +292,7 @@ export class GuildPlayer {
 			 embed.setFields()
 		}
 		else{
-			clearInterval(this.embedUpdater);
+			clearInterval(this.progressBarTimer);
 		}
 	}
 
