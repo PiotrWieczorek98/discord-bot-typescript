@@ -49,8 +49,7 @@ export class AudioSourceLocal extends AudioSource {
 		}
 	
 		// Create new audio source
-		let fullPath = `${__dirname}/./${globalVars.paths.SOUNDS}/${member.guild.id}/${soundName}`;
-		fullPath = path.normalize(fullPath);
+		let fullPath = `${__dirname}/../${globalVars.paths.SOUNDS}/${member.guild.id}/${soundName}`;
 		const metadata: IAudioSourceMetadata = {
 			title: soundName || 'undefined',
 			path: fullPath,

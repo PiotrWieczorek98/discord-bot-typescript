@@ -69,7 +69,6 @@ export class Azure {
 	 * @returns 
 	 */
 	static async uploadBlob(containerName: string, filePath: string, overwrite = false) {
-		filePath = path.normalize(filePath);
 		const fileName = path.parse(filePath).base;
 		try {
 			// Check if file exists
