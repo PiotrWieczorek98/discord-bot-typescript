@@ -30,12 +30,12 @@ module.exports = {
 		let searchPhrase = interaction.options.getString('phrase')!;
 
 		let message: string;
+		message = `Processing...`;
+		await interaction.reply(message);
+
 		const guildId = interaction.guildId!;
 		const textChannel = interaction.channel as TextChannel;
 		const member = (interaction.member as GuildMember);
-
-		message = `Processing...`;
-		await interaction.reply(message);
 
 		// Check for abnormalities
 		const voiceChannel = (member.voice.channel as VoiceChannel);

@@ -50,7 +50,7 @@ export class GuildPlayer {
 
 		// Delete reply
 		const reply = await interaction.fetchReply() as Message;
-		await reply.delete();
+		reply.delete();
 				
 		// Subscribe voice connection to player
 		newGuildPlayer.connection.subscribe(newGuildPlayer.audioPlayer);
