@@ -64,20 +64,28 @@ module.exports = {
         
 
 		// Create player if doesn't exist
-		let guildPlayer = globalVars.guildsPlayers.get(member.guild.id);
-		if(guildPlayer == undefined){
-			message = `Initializing player...`;
-			await interaction.editReply(message);
-			console.log(`Guild ${guildId}: ${message}`);
-			
-			await GuildPlayer.createGuildPlayer(interaction, audioSource);	
+		try{
+			let guildPlayer = globalVars.guildsPlayers.get(member.guild.id);
+			if(guildPlayer == undefined){
+				message = `Initializing player...`;
+				await interaction.editReply(message);
+				console.log(`Guild ${guildId}: ${message}`);
+				
+				await GuildPlayer.createGuildPlayer(interaction, audioSource);	
+			}
+			else {
+				// Delete reply
+				const reply = await interaction.fetchReply() as Message;
+				await reply.delete();
+				
+				guildPlayer.addToQueue(audioSource);
+			}
 		}
-		else {
-			// Delete reply
-			const reply = await interaction.fetchReply() as Message;
-			await reply.delete();
-			
-			guildPlayer.addToQueue(audioSource);
+		catch(error){
+			message = `Something went wrong - try again`;
+			console.error((error as Error).message);
+			const handle = await textChannel.send(message);
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);
 		}
 	},
 };
