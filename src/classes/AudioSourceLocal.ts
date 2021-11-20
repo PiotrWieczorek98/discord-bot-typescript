@@ -54,7 +54,7 @@ export class AudioSourceLocal extends AudioSource {
 			title: soundName || 'undefined',
 			path: fullPath,
 			description: '...',
-			thumbnail: 'https://i1.sndcdn.com/artworks-000566136428-kdrjs4-t240x240.jpg',
+			thumbnail: 'https://i.imgur.com/5h0eb09.gif',
 		}
 	
 		return metadata;
