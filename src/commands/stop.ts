@@ -23,7 +23,7 @@ module.exports = {
 		}
 		else{
 			message = '⏹ Stopped player';
-			guildPlayer.stopPlayer();
+			guildPlayer.removePlayer();
 		}
 		await interaction.reply(message);
 		console.log(`Guild ${guildId}: ${message}`);
