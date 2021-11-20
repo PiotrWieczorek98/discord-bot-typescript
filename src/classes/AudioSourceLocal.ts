@@ -3,6 +3,7 @@ import { CommandInteraction, GuildMember, Message, TextChannel } from 'discord.j
 import { globalVars } from './GlobalVars';
 import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
 import { AudioSource } from './AudioSource';
+import path from 'path/posix';
 
 /**
  * Class used to distinguish audio source
@@ -48,7 +49,7 @@ export class AudioSourceLocal extends AudioSource {
 		}
 	
 		// Create new audio source
-		let fullPath = `${__dirname}\\..\\${globalVars.paths.SOUNDS}\\${member.guild.id}\\${soundName}`;
+		let fullPath = `${__dirname}/../${globalVars.paths.SOUNDS}/${member.guild.id}/${soundName}`;
 		const metadata: IAudioSourceMetadata = {
 			title: soundName || 'undefined',
 			path: fullPath,

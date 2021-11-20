@@ -52,15 +52,20 @@ export class GuildPlayer {
 
 		// Delete reply
 		const reply = await interaction.fetchReply() as Message;
-		await reply.delete();
+		try{
+			await reply.delete();
+		}
+		catch{
+			console.log(`${interaction.guildId}: reply already deleted.`);
+		}
 				
 		// Subscribe voice connection to player
 		newGuildPlayer.connection.subscribe(newGuildPlayer.audioPlayer);
 
 		// Start playback
 		await newGuildPlayer.playAudio(newGuildPlayer.audioSources[0]);
+		await newGuildPlayer.setupTrackers();
 		newGuildPlayer.setupAudioPlayerEvents();
-		newGuildPlayer.setupTrackers();
 
 		newGuildPlayer.ready = true;
 		return newGuildPlayer;

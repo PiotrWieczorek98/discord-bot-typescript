@@ -18,7 +18,8 @@ const client = new Client({
 });
 
 // Load commands
-let dir = path.resolve(__dirname, globalVars.paths.COMMANDS);
+let dir: string;
+dir = `${__dirname}/${globalVars.paths.COMMANDS}`;
 const commandFiles = fs.readdirSync(dir).filter(file => file.endsWith('.js'));
 for (const file of commandFiles) {
 	const filePath = path.resolve(dir, file);
@@ -33,9 +34,16 @@ for (const file of commandFiles) {
 // Command listeners
 client.on('interactionCreate', async interaction => {
 	// Check if command exist
-	if (!interaction.isCommand()) return;
+	if (!interaction.isCommand()){
+		console.log(`${interaction.guildId}: interaction not a command`);
+		return;
+	}
 	const command = globalVars.commands.get(interaction.commandName);
-	if (!command) return;
+	if (!command){
+		console.log(`${interaction.guildId}: ${interaction.commandName} not in commands' list`);
+		return;
+	} 
+
 
 	// Check if command is on cooldown
 	if( globalVars.guildsCommandsCooldown.has(interaction.guildId)){
@@ -60,7 +68,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 // Event listeners
-dir = path.resolve(__dirname, globalVars.paths.EVENTS);
+dir = `${__dirname}/${globalVars.paths.EVENTS}`;
 const eventFiles = fs.readdirSync(dir).filter(file => file.endsWith('.js'));
 
 for (const file of eventFiles) {
