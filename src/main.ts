@@ -33,9 +33,16 @@ for (const file of commandFiles) {
 // Command listeners
 client.on('interactionCreate', async interaction => {
 	// Check if command exist
-	if (!interaction.isCommand()) return;
+	if (!interaction.isCommand()){
+		console.log(`${interaction.guildId}: interaction not a command`);
+		return;
+	}
 	const command = globalVars.commands.get(interaction.commandName);
-	if (!command) return;
+	if (!command){
+		console.log(`${interaction.guildId}: ${interaction.commandName} not in commands' list`);
+		return;
+	} 
+
 
 	// Check if command is on cooldown
 	if( globalVars.guildsCommandsCooldown.has(interaction.guildId)){
