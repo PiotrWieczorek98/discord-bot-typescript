@@ -3,10 +3,9 @@ import { CommandInteraction, GuildMember, Message, TextChannel, VoiceChannel } f
 import { AudioSourceYoutube } from '../classes/AudioSourceYoutube';
 import { globalVars } from '../classes/GlobalVars';
 import { GuildPlayer } from '../classes/GuildPlayer';
-import YouTube, { Video } from 'youtube-sr';
-import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
 import { handleUndefined } from '../functions/handleUndefined';
-import { wait } from '../functions/wait';
+import { AudioSourceLocal } from '../classes/AudioSourceLocal';
+import { AudioSource } from '../classes/AudioSource';
 
 // --------------------------------------------------------------------
 // Plays sound from youtube in voice chat or adds to queue
@@ -17,11 +16,11 @@ import { wait } from '../functions/wait';
  */
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('youtube')
-		.setDescription('Play youtube video')
+		.setName('play')
+		.setDescription('Play audio source')
 		.addStringOption(option => option
 			.setName('phrase')
-			.setDescription('Phrase to search or link')
+			.setDescription(' local audio id / phrase to search / link')
 			.setRequired(true)),
 	/**
 	 * @param interaction
@@ -35,11 +34,8 @@ module.exports = {
 		const textChannel = interaction.channel as TextChannel;
 		const member = (interaction.member as GuildMember);
 
-
-
 		message = `Processing...`;
 		await interaction.reply(message);
-
 
 		// Check for abnormalities
 		const voiceChannel = (member.voice.channel as VoiceChannel);
@@ -53,34 +49,19 @@ module.exports = {
 			handleUndefined(undefined, message, textChannel);
 			return;
 		}
-	
-		// Search youtube
-		let video: Video;
-		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
-		let regexResult = searchPhrase.match(regex);
-		if (regexResult) {
-			const url = `https://www.youtube.com/watch${regexResult[0]}`;
-			video = await YouTube.getVideo(url);
-		}
-		else{
-			video = await YouTube.searchOne(searchPhrase);
 
-		}		
+        let audioSource: AudioSource | undefined;
+        if(!isNaN(parseInt(searchPhrase)) ){
+            audioSource = await AudioSourceLocal.createSource(interaction, searchPhrase);
+        }
+        else{
+            audioSource = await AudioSourceYoutube.createSource( interaction, searchPhrase);
+        }
 
-		// Create Audio Source
-		const placeholder = '-placeholder-';
-		const metadata: IAudioSourceMetadata = {
-			title: video.title ||  placeholder,
-			path: video.url,
-			description: video.description || placeholder,
-			thumbnail: video.thumbnail?.url || placeholder,
-		};
+        if(audioSource == undefined) return;
 
-		// Check if resource was created successfully
-		const audioSource = await AudioSourceYoutube.create(metadata);
-		message = '❌ Error while creating resource!';
-		if(handleUndefined(audioSource.resource, message, textChannel)) return;
-
+        console.log(`Guild ${guildId}: ${JSON.stringify(audioSource.metadata,null, 2)}`);
+        
 
 		// Create player if doesn't exist
 		let guildPlayer = globalVars.guildsPlayers.get(member.guild.id);

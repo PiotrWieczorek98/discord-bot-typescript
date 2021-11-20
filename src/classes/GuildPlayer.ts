@@ -1,7 +1,7 @@
 import { CommandInteraction, GuildMember, Message, MessageEmbed, MessageReaction, TextChannel, VoiceChannel } from 'discord.js';
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, StreamType, VoiceConnection } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
-import { IAudioSource } from '../interfaces/IAudioSource';
+import { AudioSource } from './AudioSource';
 import { wait } from '../functions/wait';
 
 /**
@@ -14,7 +14,7 @@ export class GuildPlayer {
 	connection: VoiceConnection;
 	textChannel: TextChannel;
 	voiceChannel: VoiceChannel;
-	audioSources: Array<IAudioSource>;
+	audioSources: Array<AudioSource>;
 	private ready: boolean;
 
 	private constructor(interaction: CommandInteraction){
@@ -37,7 +37,7 @@ export class GuildPlayer {
 	 * @param interaction
 	 * @param source
 	 */
-	static async createGuildPlayer(interaction:CommandInteraction, source: IAudioSource) {
+	static async createGuildPlayer(interaction:CommandInteraction, source: AudioSource) {
 		const newGuildPlayer = new GuildPlayer(interaction);
 		globalVars.guildsPlayers.set(interaction.guildId, newGuildPlayer);
 
@@ -69,7 +69,7 @@ export class GuildPlayer {
 	 * @param source 
 	 * @returns 
 	 */
-	async playAudio(source: IAudioSource){
+	async playAudio(source: AudioSource){
 		const resource = source.resource!;
 		this.audioPlayer.play(resource);
 
@@ -101,7 +101,7 @@ export class GuildPlayer {
 	 * Add audio source to guild's queue
 	 * @param source 
 	 */
-	async addToQueue(source: IAudioSource){
+	async addToQueue(source: AudioSource){
 		this.audioSources.push(source);
 		const embed = this.prepareEmbed();
 		this.messageHandle.edit({embeds: [embed]});
@@ -193,27 +193,28 @@ export class GuildPlayer {
 			}
 		});
 
+		// Code below not working as intended
 		// Keep track of sent messages to make player embed always on bottom
-		const messageCollector = this.textChannel.createMessageCollector({ time: 100000 });
+	// 	const messageCollector = this.textChannel.createMessageCollector({ time: 100000 });
 
-		messageCollector.on('collect', async(m) => {
-			await wait(3000);
-			this.textChannel.messages.fetch({ limit: 1 }).then(async messages => {
-				const lastMessage = messages.first();
-				if(this.messageHandle.id != lastMessage!.id){
-					const embed = this.messageHandle.embeds[0];
-					if(!this.messageHandle.deleted){
-						this.ready = false;
-						this.messageHandle.deleted = true;
-						this.messageHandle.delete();
-					}
-					this.messageHandle = await this.textChannel.send({embeds:[embed]});
-					this.setupTrackers();	
-					this.ready = false;
+	// 	messageCollector.on('collect', async(m) => {
+	// 		await wait(3000);
+	// 		this.textChannel.messages.fetch({ limit: 1 }).then(async messages => {
+	// 			const lastMessage = messages.first();
+	// 			if(this.messageHandle.id != lastMessage!.id){
+	// 				const embed = this.messageHandle.embeds[0];
+	// 				if(!this.messageHandle.deleted){
+	// 					this.ready = false;
+	// 					this.messageHandle.deleted = true;
+	// 					this.messageHandle.delete();
+	// 				}
+	// 				this.messageHandle = await this.textChannel.send({embeds:[embed]});
+	// 				this.setupTrackers();	
+	// 				this.ready = false;
 				
-				}
-			});
-		});
+	// 			}
+	// 		});
+	// 	});
 	}
 
 	/**
@@ -242,8 +243,24 @@ export class GuildPlayer {
 		.setThumbnail(currentlyPlayed.metadata.thumbnail)
 		.addField('**Queue:**', message, false)
 		.setTimestamp()
-		.setFooter('Use reactions for interaction!','https://i.imgur.com/L8gH1y8.png');
+		.setFooter('Use reactions for interaction!',
+		'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 
 		return messageEmbed;
+	}
+
+	/**
+	 * Useful if player embed gets buried in text chat
+	 */
+	async bringDownEmbed(){
+		const embed = this.messageHandle.embeds[0];
+		if(!this.messageHandle.deleted){
+			this.ready = false;
+			this.messageHandle.deleted = true;
+			this.messageHandle.delete();
+		}
+		this.messageHandle = await this.textChannel.send({embeds:[embed]});
+		this.setupTrackers();
+		this.ready = false;
 	}
 }
