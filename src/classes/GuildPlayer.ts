@@ -1,8 +1,7 @@
 import { CommandInteraction, GuildMember, Message, MessageEmbed, MessageReaction, TextChannel, VoiceChannel } from 'discord.js';
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel, StreamType, VoiceConnection } from '@discordjs/voice';
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
 import { AudioSource } from './AudioSource';
-import { wait } from '../functions/wait';
 
 /**
  * Class responsible for audio player functions in voice channels
@@ -15,7 +14,9 @@ export class GuildPlayer {
 	textChannel: TextChannel;
 	voiceChannel: VoiceChannel;
 	audioSources: Array<AudioSource>;
+
 	private ready: boolean;
+	private embedUpdater!: NodeJS.Timer; 
 
 	private constructor(interaction: CommandInteraction){
 		this.ready = false;
@@ -47,6 +48,7 @@ export class GuildPlayer {
 		// Display embed message - acts as player view
 		const embed = newGuildPlayer.prepareEmbed();
 		newGuildPlayer.messageHandle = await (interaction.channel as TextChannel).send({embeds:[embed]});
+		setInterval(newGuildPlayer.updateProgressBar, 1000);
 
 		// Delete reply
 		const reply = await interaction.fetchReply() as Message;
@@ -241,12 +243,26 @@ export class GuildPlayer {
 		.setAuthor('🔊 Now playing:')
 		.setTitle(currentlyPlayed.metadata.title)
 		.setThumbnail(currentlyPlayed.metadata.thumbnail)
+		.addField('Progress:', 'test')
 		.addField('**Queue:**', message, false)
 		.setTimestamp()
 		.setFooter('Use reactions for interaction!',
 		'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 
 		return messageEmbed;
+	}
+
+	updateProgressBar(){
+		if(!this.messageHandle.deleted){
+			const embed = this.messageHandle.embeds[0];
+			const fields = embed.fields;
+			const progressBarField = fields[0];
+			progressBarField.value = 'worked';
+			 embed.setFields()
+		}
+		else{
+			clearInterval(this.embedUpdater);
+		}
 	}
 
 	/**
