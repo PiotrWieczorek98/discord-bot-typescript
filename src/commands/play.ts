@@ -58,7 +58,12 @@ module.exports = {
             audioSource = await AudioSourceYoutube.createSource( interaction, searchPhrase);
         }
 
-        if(audioSource == undefined) return;
+        if(audioSource == undefined){
+			// Delete reply
+			const reply = await interaction.fetchReply() as Message;
+			await reply.delete();	
+			return;
+		} 
 
         console.log(`Guild ${guildId}: ${JSON.stringify(audioSource.metadata,null, 2)}`);
         

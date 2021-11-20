@@ -233,8 +233,9 @@ export class GuildPlayer {
 		// Await reactions
 		await this.messageHandle.react('⏩');
 		await this.messageHandle.react('⏹️');
+		await this.messageHandle.react('⏬');
 		const filterReaction = (reaction: MessageReaction) => {
-			return ['⏩', '⏹️'].includes(reaction.emoji.name!);
+			return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
 		};
 
 		// React to emoji reaction
@@ -256,10 +257,17 @@ export class GuildPlayer {
 			}
 
 			if(reaction.emoji.name == '⏩'){
-				await this.shiftQueue();
+				if(this.audioSources.length != 0){
+					await this.shiftQueue();
+				}
 			}
 			else if(reaction.emoji.name == '⏹️'){
-				this.setPlayerIdler();
+				if(this.audioSources.length != 0){
+					this.setPlayerIdler();
+				}
+			}
+			else if(reaction.emoji.name == '⏬'){
+				this.bringDownEmbed();
 			}
 		});
 
@@ -293,18 +301,7 @@ export class GuildPlayer {
 	 */
 	prepareEmbed(){
 		console.log('Preparing embed...');
-		let message= '';
-		let i = 0;
-		const queueList = this.audioSources.slice(1,);
-		if(queueList.length == 0){
-			message = 'Queue is empty!';
-		}
-		else{
-			for (const source of queueList) {
-				i += 1;
-				message += `${i}. ${source.metadata.title}\n`;
-			}
-		}
+		let message: string;
 
 		// Edit display
 		let messageEmbed: MessageEmbed;
@@ -312,16 +309,31 @@ export class GuildPlayer {
 		if(currentlyPlayed == undefined){
 			messageEmbed = new MessageEmbed()
 			.setColor('#ffff00')
-			.setAuthor('🔈 Waiting for entries...')
-			.setTitle('Nothing is playing right now!')
+			.setAuthor('🔈 Nothing is playing right now!')
+			.setTitle('Waiting for entries...')
 			.setThumbnail('https://c.tenor.com/ycKJas-YT0UAAAAM/im-waiting-aki-and-paw-paw.gif')
 			//.addField('Progress:', 'test')
-			.addField('**Queue:**', message, false)
 			.setTimestamp()
 			.setFooter('Use reactions for interaction!',
 			'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 		}
 		else{
+			message = '';
+			let i = 0;
+			const queueList = this.audioSources.slice(1,);
+			if(queueList.length == 0){
+				message = 'Queue is empty!';
+			}
+			else{
+				for (const source of queueList) {
+					i += 1;
+					message += `${i}. ${source.metadata.title}\n`;
+				}
+			}
+			if (message.length > 1001){
+				message = message.substr(0, 1000);
+				message = message + '\n...';
+			}
 			messageEmbed = new MessageEmbed()
 			.setColor('#00ff00')
 			.setAuthor('🔊 Now playing:')
