@@ -1,14 +1,17 @@
 import * as expressCore from 'express-serve-static-core';
 import { betsLeagueOfLegends } from './BetsLeagueOfLegends';
 import express from 'express';
-import { wakeUpDyno } from '../functions/wakeUpDyno';
+import { globalVars } from './GlobalVars';
+import fetch from 'node-fetch';
 
 /**
  * Web HTTP endpoints
  */
-class Endpoints {
-	private static _instance: Endpoints;
+export class WebService {
+	private static _instance: WebService;
 	app: expressCore.Express;
+	endpoints: string[];
+	listeningPort: string;
 
 	/**
 	 * Initialize gambling system
@@ -17,51 +20,70 @@ class Endpoints {
 	private constructor() {
 		this.app = express();
 		this.app.use(express.json());
-	};
-	/**
-     * React to web requests
-     * @param port
-     */
-	async setListener(port: number) {
+		this.endpoints = [];
+		this.setEndpoints();
 
-		this.app.post('/game_started', (req: express.Request, res: express.Response) => {
+		this.listeningPort = process.env.PORT || globalVars.gambleConfig.port;
+		this.app.listen(parseInt(this.listeningPort), () => {
+
+		// Keep dyno awake
+		setInterval(()=>{
+		// HTTP GET request to the dyno's url
+		const DYNO_URL = 'https://discord-js-boi-bot.herokuapp.com/ping';
+		fetch(DYNO_URL).then(() => console.log(`Wake up dyno called.`));
+		}, 25 * 60000)
+		});
+	};
+
+	public static get getInstance(){
+		return this._instance || (this._instance = new this());
+	}
+
+	private setEndpoints() {
+		let endpoint: string;
+		endpoint = '/game_started';
+		this.app.post(endpoint, (req: express.Request, res: express.Response) => {
 			betsLeagueOfLegends.eventGameStarted(req);
 			res.send({ status: 'ok' });
 
 		});
+		this.endpoints.push(endpoint);
 
-		this.app.post('/death', (req: express.Request, res: express.Response) => {
+		endpoint = '/death';
+		this.app.post(endpoint, (req: express.Request, res: express.Response) => {
 			betsLeagueOfLegends.eventSummonerDeath(req);
 			res.send({ status: 'ok' });
 
 		});
+		this.endpoints.push(endpoint);
 
-		this.app.post('/game_ended', (req: express.Request, res: express.Response) => {
+		endpoint = '/game_ended';
+		this.app.post(endpoint, (req: express.Request, res: express.Response) => {
 			betsLeagueOfLegends.eventGameEnded(req);
 			res.send({ status: 'ok' });
 		});
+		this.endpoints.push(endpoint);
 
-		this.app.get('/ping', (req: express.Request, res: express.Response) => {
+		endpoint = '/ping';
+		this.app.get(endpoint, (req: express.Request, res: express.Response) => {
 			let data = req.body;
 			data ??= { status: 'ok' };
 
 			console.log('Received /ping request for ', data);
 			res.send(data);
 		});
-
-		const listeningPort = process.env.PORT || port;
-		this.app.listen(listeningPort, () => {
-			wakeUpDyno(25, wakeUpDyno);
-			console.log('Listening on port: ', listeningPort);
-		});
+		this.endpoints.push(endpoint);
 	};
-
-	public static get Instance(){
-		return this._instance || (this._instance = new this());
+	
+	display(){
+		console.log(`Listening on port: ${this.listeningPort} for:`);
+		let list = '\n';
+		let i = 0;
+		for (const endpoint of this.endpoints) {
+			i += 1;
+			list += `${i}. ${endpoint}\n`;
+		}
+		console.log(list);
 	}
 
 };
-
-const endpoints = Endpoints.Instance;
-
-export {endpoints};

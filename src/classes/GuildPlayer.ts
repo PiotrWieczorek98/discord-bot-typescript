@@ -99,14 +99,21 @@ export class GuildPlayer {
 		// Stop if queue is empty
 		this.audioSources.shift();
 		if (this.audioSources.length == 0) {
-			this.setPlayerIdler();
+			await this.setPlayerIdler();
 		}
 		// Play next audio source if not
 		else{
 			const newSource = this.audioSources[0];
 			await this.playAudio(newSource);
 			const embed = this.prepareEmbed();
-			this.messageHandle?.edit({embeds: [embed]});
+			try{
+				this.messageHandle?.edit({embeds: [embed]});
+			}
+			catch(error){
+				console.error('Error while editing!', (error as Error).message);
+				this.messageHandle = await this.textChannel.send({embeds:[embed]});
+				await this.setupTrackers();
+			}
 		}
 		console.log('Shifting queue Done!');
 	}
@@ -125,7 +132,14 @@ export class GuildPlayer {
 
 		if(this.messageHandle){
 			const embed = this.prepareEmbed();
-			this.messageHandle.edit({embeds: [embed]});
+			try{
+				this.messageHandle?.edit({embeds: [embed]});
+			}
+			catch(error){
+				console.error('Error while editing!', (error as Error).message);
+				this.messageHandle = await this.textChannel.send({embeds:[embed]});
+				await this.setupTrackers();
+			}
 		};
 		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
 		console.log(`Guild ${this.guildId}: ${message}`);
@@ -140,11 +154,18 @@ export class GuildPlayer {
 	/**
 	 * Makes player wait a minute idling
 	 */
-	setPlayerIdler(){
+	async setPlayerIdler(){
 		console.log('Setting Idler...');
 		// Setup message embed
 		const embed = this.prepareEmbed();
-		this.messageHandle?.edit({embeds:[embed]});
+		try{
+			this.messageHandle?.edit({embeds: [embed]});
+		}
+		catch(error){
+			console.error('Error while editing!', (error as Error).message);
+			this.messageHandle = await this.textChannel.send({embeds:[embed]});
+			await this.setupTrackers();
+		}
 
 		// Stop playback
 		this.audioSources = [];
@@ -181,7 +202,13 @@ export class GuildPlayer {
 			 selfMute: true, 
 			 channelId: this.voiceChannel.id });
 		this.messageHandle!.deleted = true;
-		this.messageHandle!.delete();
+		try{
+			this.messageHandle!.delete();	
+		}
+		catch(error){
+			console.error('Error while deleting!', (error as Error).message);
+		}
+
 	}
 		this.audioPlayer.removeAllListeners();
 		this.audioPlayer.stop();
@@ -201,7 +228,7 @@ export class GuildPlayer {
 					await this.shiftQueue();
 				}
 				else{
-					this.setPlayerIdler();
+					await this.setPlayerIdler();
 				}
 			}
 		});
@@ -214,7 +241,7 @@ export class GuildPlayer {
 				await this.shiftQueue();
 			}
 			else{
-				this.setPlayerIdler();
+				await this.setPlayerIdler();
 			}
 		});
 		console.log('Setting up events Done!');
@@ -231,45 +258,53 @@ export class GuildPlayer {
 		} 
 
 		// Await reactions
-		await this.messageHandle.react('⏩');
-		await this.messageHandle.react('⏹️');
-		await this.messageHandle.react('⏬');
-		const filterReaction = (reaction: MessageReaction) => {
-			return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
-		};
+		try{
+			await this.messageHandle.react('⏩');
+			await this.messageHandle.react('⏹️');
+			await this.messageHandle.react('⏬');
+			const filterReaction = (reaction: MessageReaction) => {
+				return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
+			};
 
-		// React to emoji reaction
-		const reactionCollector = this.messageHandle.createReactionCollector({filter: filterReaction, time:600000});
-		reactionCollector.on('collect', async (reaction, user) => {
-			// Ignore self reaction
-			if(user.id == globalVars.client.user!.id) return;
-			
+			// React to emoji reaction
+			const reactionCollector = this.messageHandle.createReactionCollector({filter: filterReaction, time:600000});
+			reactionCollector.on('collect', async (reaction, user) => {
+				// Ignore self reaction
+				if(user.id == globalVars.client.user!.id) return;
+				
 
-			// Remove reaction by user
-			const userReactions = this.messageHandle!.reactions.cache.filter(reaction => 
-				reaction.users.cache.has(user.id));
-			try {
-				for (const reaction of userReactions.values()) {
-					await reaction.users.remove(user.id);
+				// Remove reaction by user
+				const userReactions = this.messageHandle!.reactions.cache.filter(reaction => 
+					reaction.users.cache.has(user.id));
+				try {
+					for (const reaction of userReactions.values()) {
+						await reaction.users.remove(user.id);
+					}
+				} catch (error) {
+					console.error('Failed to remove reactions.');
 				}
-			} catch (error) {
-				console.error('Failed to remove reactions.');
-			}
 
-			if(reaction.emoji.name == '⏩'){
-				if(this.audioSources.length != 0){
-					await this.shiftQueue();
+				if(reaction.emoji.name == '⏩'){
+					if(this.audioSources.length != 0){
+						await this.shiftQueue();
+					}
 				}
-			}
-			else if(reaction.emoji.name == '⏹️'){
-				if(this.audioSources.length != 0){
-					this.setPlayerIdler();
+				else if(reaction.emoji.name == '⏹️'){
+					if(this.audioSources.length != 0){
+						await this.setPlayerIdler();
+					}
 				}
-			}
-			else if(reaction.emoji.name == '⏬'){
-				this.bringDownEmbed();
-			}
-		});
+				else if(reaction.emoji.name == '⏬'){
+					this.bringDownEmbed();
+				}
+			});			
+		}
+		catch(error){
+			console.error('Error while reacting!', (error as Error).message);
+			const embed = this.prepareEmbed();
+			this.messageHandle = await this.textChannel.send({embeds:[embed]});
+			await this.setupTrackers();
+		}
 
 		// Code below not working as intended
 		// Keep track of sent messages to make player embed always on bottom
@@ -374,15 +409,21 @@ export class GuildPlayer {
 			console.log('Embed not found!');
 			return;
 		}
+
 		const embed = this.messageHandle.embeds[0];
 		if(!this.messageHandle.deleted){
 			this.ready = false;
 			this.messageHandle.deleted = true;
-			this.messageHandle.delete();
+			try{
+				this.messageHandle.delete();
+			}
+			catch(error){
+				console.error('Error while deleting!', (error as Error).message);
+			}
+			this.messageHandle = await this.textChannel.send({embeds:[embed]});
+			await this.setupTrackers();
+			this.ready = false;
+			console.log('Bringind down embed Done!');
 		}
-		this.messageHandle = await this.textChannel.send({embeds:[embed]});
-		await this.setupTrackers();
-		this.ready = false;
-		console.log('Bringind down embed Done!');
 	}
 }

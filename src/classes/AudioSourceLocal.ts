@@ -40,6 +40,8 @@ export class AudioSourceLocal extends AudioSource {
 		// Get the sound
 		const guildLocalAudioFiles = globalVars.guildsLocalAudioFiles.get(guildId);
 		const soundName = guildLocalAudioFiles?.soundList.get(parseInt(search));
+
+		// Handle undefined
 		if(soundName == undefined){
 			message = '❌ Sike! That\'s a wrooong number! 🔥';
 			const handle = await textChannel.send(message);

@@ -58,7 +58,7 @@ class GlobalVars {
 
 		this.gambleConfig = {
 			initialCredits: 100,
-			port: 3000,
+			port: '3000',
 			timeLimit: 60000,
 			fileGamblersPath: `${this.paths.DATA}/${this.vars.FILE_GAMBLERS}`,
 			fileHistoryPath: `${this.paths.DATA}/${this.vars.FILE_BETS}`,

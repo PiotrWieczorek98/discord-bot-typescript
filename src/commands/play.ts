@@ -3,7 +3,6 @@ import { CommandInteraction, GuildMember, Message, TextChannel, VoiceChannel } f
 import { AudioSourceYoutube } from '../classes/AudioSourceYoutube';
 import { globalVars } from '../classes/GlobalVars';
 import { GuildPlayer } from '../classes/GuildPlayer';
-import { handleUndefined } from '../functions/handleUndefined';
 import { AudioSourceLocal } from '../classes/AudioSourceLocal';
 import { AudioSource } from '../classes/AudioSource';
 
@@ -39,14 +38,25 @@ module.exports = {
 
 		// Check for abnormalities
 		const voiceChannel = (member.voice.channel as VoiceChannel);
-		message = 'Join voice channel first.';
-		if(handleUndefined(voiceChannel, message, textChannel)) return;
+		
+		// Handle undefined
+		if(voiceChannel == undefined){
+			message = 'Join voice channel first.';
+			const handle = await interaction.editReply(message);
+			// Delete after 2 seconds
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);		
+			return;
+		} 
 
 		const clientMember = interaction.guild?.members.cache.get(interaction.client.user!.id)!;
 		const permissions = voiceChannel.permissionsFor(clientMember)!;
-		message = '❌ Not sufficient permissions!';
+
+		// Handle no permissions
 		if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-			handleUndefined(undefined, message, textChannel);
+			message = '❌ Not sufficient permissions!';
+			const handle = await interaction.editReply(message);
+			// Delete after 2 seconds
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);		
 			return;
 		}
 
