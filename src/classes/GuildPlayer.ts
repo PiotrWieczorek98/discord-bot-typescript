@@ -53,6 +53,7 @@ export class GuildPlayer {
 
 		// Start audio playback
 		await newGuildPlayer.addToQueue(source);
+
 		// Display embed message - acts as player view
 		const embed = newGuildPlayer.prepareEmbed();
 		newGuildPlayer.messageHandle = await (interaction.channel as TextChannel).send({embeds:[embed]});
@@ -61,17 +62,21 @@ export class GuildPlayer {
 		await newGuildPlayer.setupTrackers();
 		newGuildPlayer.setupAudioPlayerEvents();
 
-		// Delete reply
-		const reply = await interaction.fetchReply() as Message;
-		try{
-			await reply.delete();
-		}
-		catch{
-			console.log(`${interaction.guildId}: reply already deleted.`);
-		}
-
 		console.log('Creating guild Player Done!');
 		return newGuildPlayer;
+	}
+
+	/**
+	 * Called from event 'messageDelete' when user deletes embed player
+	 * @param guildPlayer 
+	 */
+	async recreateEmbed(){
+		// Display embed message - acts as player view
+		const embed = this.prepareEmbed();
+		this.messageHandle = await (this.textChannel as TextChannel).send({embeds:[embed]});
+
+		// Setup trackers
+		await this.setupTrackers();
 	}
 
 	/**
@@ -106,14 +111,7 @@ export class GuildPlayer {
 			const newSource = this.audioSources[0];
 			await this.playAudio(newSource);
 			const embed = this.prepareEmbed();
-			try{
-				this.messageHandle?.edit({embeds: [embed]});
-			}
-			catch(error){
-				console.error('Error while editing!', (error as Error).message);
-				this.messageHandle = await this.textChannel.send({embeds:[embed]});
-				await this.setupTrackers();
-			}
+			this.messageHandle?.edit({embeds: [embed]});
 		}
 		console.log('Shifting queue Done!');
 	}
@@ -122,24 +120,30 @@ export class GuildPlayer {
 	 * Add audio source to guild's queue
 	 * @param source 
 	 */
-	async addToQueue(source: AudioSource){
+	async addToQueue(source: AudioSource, opts?: {rejoin: boolean, interaction: CommandInteraction}){
 		console.log('Adding to queue...');
 		this.audioSources.push(source);
+
+		// If this is the first song
 		if(this.audioSources.length == 1){
 			this.playAudio(this.audioSources[0]);
 			this.ready = true;
 		}
 
+		if(opts?.rejoin){
+			// Rejoin to channel (user could switch vc while player is idling)
+			this.voiceChannel = (opts.interaction.member as GuildMember).voice.channel as VoiceChannel;
+			this.textChannel = opts.interaction.channel as TextChannel;
+			this.connection = joinVoiceChannel({
+				channelId: this.voiceChannel.id,
+				guildId: this.voiceChannel.guild.id,
+				adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+			});
+		}
+
 		if(this.messageHandle){
 			const embed = this.prepareEmbed();
-			try{
-				this.messageHandle?.edit({embeds: [embed]});
-			}
-			catch(error){
-				console.error('Error while editing!', (error as Error).message);
-				this.messageHandle = await this.textChannel.send({embeds:[embed]});
-				await this.setupTrackers();
-			}
+			this.messageHandle.edit({embeds: [embed]});
 		};
 		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
 		console.log(`Guild ${this.guildId}: ${message}`);
@@ -158,14 +162,7 @@ export class GuildPlayer {
 		console.log('Setting Idler...');
 		// Setup message embed
 		const embed = this.prepareEmbed();
-		try{
-			this.messageHandle?.edit({embeds: [embed]});
-		}
-		catch(error){
-			console.error('Error while editing!', (error as Error).message);
-			this.messageHandle = await this.textChannel.send({embeds:[embed]});
-			await this.setupTrackers();
-		}
+		this.messageHandle?.edit({embeds: [embed]});
 
 		// Stop playback
 		this.audioSources = [];
@@ -197,22 +194,18 @@ export class GuildPlayer {
 	removePlayer(){
 		console.log('Removing player...');
 		this.ready = false;
+		// Must be done first to prevent recreation of embed
+		globalVars.guildsPlayers.delete(this.guildId);
+
 	if(!this.messageHandle?.deleted){
 		this.connection.rejoin({ selfDeaf: false,
 			 selfMute: true, 
 			 channelId: this.voiceChannel.id });
 		this.messageHandle!.deleted = true;
-		try{
-			this.messageHandle!.delete();	
-		}
-		catch(error){
-			console.error('Error while deleting!', (error as Error).message);
-		}
-
+		this.messageHandle!.delete();	
 	}
 		this.audioPlayer.removeAllListeners();
 		this.audioPlayer.stop();
-		globalVars.guildsPlayers.delete(this.guildId);
 		console.log('Removing player Done!');
 	}
 
@@ -252,59 +245,51 @@ export class GuildPlayer {
 	 */
 	async setupTrackers(){
 		console.log('Setting up trackers...');
-		if(this.messageHandle == undefined){
+		if(!this.messageHandle){
 			console.log('Message not found!');
 			return;
 		} 
 
-		// Await reactions
-		try{
-			await this.messageHandle.react('⏩');
-			await this.messageHandle.react('⏹️');
-			await this.messageHandle.react('⏬');
-			const filterReaction = (reaction: MessageReaction) => {
-				return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
-			};
+		// Give reactions
+		await this.messageHandle.react('⏩');
+		await this.messageHandle.react('⏹️');
+		await this.messageHandle.react('⏬');
+		const filterReaction = (reaction: MessageReaction) => {
+			return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
+		};
 
-			// React to emoji reaction
-			const reactionCollector = this.messageHandle.createReactionCollector({filter: filterReaction, time:600000});
-			reactionCollector.on('collect', async (reaction, user) => {
-				// Ignore self reaction
-				if(user.id == globalVars.client.user!.id) return;
-				
+		// React to emoji reaction
+		const reactionCollector = this.messageHandle.createReactionCollector({filter: filterReaction, time:600000});
+		reactionCollector.on('collect', async (reaction, user) => {
+			// Ignore self reaction
+			if(user.id == globalVars.client.user!.id) return;
+			
 
-				// Remove reaction by user
-				const userReactions = this.messageHandle!.reactions.cache.filter(reaction => 
-					reaction.users.cache.has(user.id));
-				try {
-					for (const reaction of userReactions.values()) {
-						await reaction.users.remove(user.id);
-					}
-				} catch (error) {
-					console.error('Failed to remove reactions.');
+			// Remove reaction by user
+			const userReactions = this.messageHandle!.reactions.cache.filter(reaction => 
+				reaction.users.cache.has(user.id));
+			try {
+				for (const reaction of userReactions.values()) {
+					await reaction.users.remove(user.id);
 				}
+			} catch (error) {
+				console.error('Failed to remove reactions.');
+			}
 
-				if(reaction.emoji.name == '⏩'){
-					if(this.audioSources.length != 0){
-						await this.shiftQueue();
-					}
+			if(reaction.emoji.name == '⏩'){
+				if(this.audioSources.length != 0){
+					await this.shiftQueue();
 				}
-				else if(reaction.emoji.name == '⏹️'){
-					if(this.audioSources.length != 0){
-						await this.setPlayerIdler();
-					}
+			}
+			else if(reaction.emoji.name == '⏹️'){
+				if(this.audioSources.length != 0){
+					await this.setPlayerIdler();
 				}
-				else if(reaction.emoji.name == '⏬'){
-					this.bringDownEmbed();
-				}
-			});			
-		}
-		catch(error){
-			console.error('Error while reacting!', (error as Error).message);
-			const embed = this.prepareEmbed();
-			this.messageHandle = await this.textChannel.send({embeds:[embed]});
-			await this.setupTrackers();
-		}
+			}
+			else if(reaction.emoji.name == '⏬'){
+				this.bringDownEmbed();
+			}
+		});	
 
 		// Code below not working as intended
 		// Keep track of sent messages to make player embed always on bottom
@@ -405,25 +390,10 @@ export class GuildPlayer {
 	 */
 	async bringDownEmbed(){
 		console.log('Bringind down embed...');
-		if(this.messageHandle == undefined) {
-			console.log('Embed not found!');
-			return;
-		}
 
-		const embed = this.messageHandle.embeds[0];
-		if(!this.messageHandle.deleted){
-			this.ready = false;
-			this.messageHandle.deleted = true;
-			try{
-				this.messageHandle.delete();
-			}
-			catch(error){
-				console.error('Error while deleting!', (error as Error).message);
-			}
-			this.messageHandle = await this.textChannel.send({embeds:[embed]});
-			await this.setupTrackers();
-			this.ready = false;
-			console.log('Bringind down embed Done!');
-		}
+		this.ready = false;
+		await this.messageHandle!.delete();
+		this.ready = true;
+	
 	}
 }

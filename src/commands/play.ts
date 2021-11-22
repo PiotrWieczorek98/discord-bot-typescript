@@ -82,18 +82,21 @@ module.exports = {
 		try{
 			let guildPlayer = globalVars.guildsPlayers.get(member.guild.id);
 			if(guildPlayer == undefined){
-				message = `Initializing player...`;
-				await interaction.editReply(message);
+				message = 'Initializing player...';
+				const handle = await interaction.editReply(message);
+				// Delete after 2 seconds
+				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);	
 				console.log(`Guild ${guildId}: ${message}`);
 				
 				await GuildPlayer.createGuildPlayer(interaction, audioSource);	
 			}
 			else {
-				// Delete reply
-				const reply = await interaction.fetchReply() as Message;
-				await reply.delete();
+				message = 'Sending to queue...';
+				const handle = await interaction.editReply(message);
+				// Delete after 2 seconds
+				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);
 				
-				guildPlayer.addToQueue(audioSource);
+				guildPlayer.addToQueue(audioSource, {rejoin: true, interaction: interaction});
 			}
 		}
 		catch(error){

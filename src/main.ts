@@ -1,4 +1,4 @@
-import { Client, Intents } from 'discord.js';
+import { Client, Intents, Message } from 'discord.js';
 import * as fs from 'fs';
 import path from 'path';
 import { globalVars } from './classes/GlobalVars';
@@ -63,7 +63,15 @@ client.on('interactionCreate', async interaction => {
 		await command.execute(interaction);
 	}
 	catch (error) {
-		await interaction.reply({ content: '😬 There was an error while executing this command!', ephemeral: true });
+		const message = '😬 There was an error while executing this command!';
+		try{
+			await interaction.reply({ content: message, ephemeral: true });
+		}
+		catch{
+			console.error((error as Error).message);
+			const handle = await interaction.channel!.send(message);
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);
+		}
 		console.log(`Guild ${interaction.guild!.id}: ${error}`);
 	}
 });

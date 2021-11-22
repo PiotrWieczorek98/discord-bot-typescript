@@ -14,14 +14,14 @@ module.exports = {
 	 */
 	execute(oldState: VoiceState, newState: VoiceState) {
 		(async () => {
-			const wspolnota = '203114439468253184';
-			const guild = oldState.guild;
-			const date = new Date();
-			if (guild.id != wspolnota || (date.getHours() > 5)) {
-				return;
-			}
+			// const wspolnota = '203114439468253184';
+			// const guild = oldState.guild;
+			// const date = new Date();
+			// if (guild.id != wspolnota || (date.getHours() > 5)) {
+			// 	return;
+			// }
 
-			const client = newState.client;
+			// const client = newState.client;
 			// const client = guild.client;
 			// client.autoUploadSoundChannel.set(guild.id, null);
 
