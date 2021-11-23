@@ -157,7 +157,7 @@ export class GuildPlayer {
 		
 		// Setup message embed
 		const embed = this.prepareEmbed();
-		this.messageHandle!.edit({embeds: [embed]});
+		await this.messageHandle!.edit({embeds: [embed]});
 
 		// Stop playback
 		this.audioSources = [];
