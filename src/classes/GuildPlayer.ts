@@ -59,7 +59,7 @@ export class GuildPlayer {
 		newGuildPlayer.messageHandle = await (interaction.channel as TextChannel).send({embeds:[embed]});
 
 		// Setup trackers
-		await newGuildPlayer.setupTrackers();
+		newGuildPlayer.setupTrackers();
 		newGuildPlayer.setupAudioPlayerEvents();
 
 		console.log('Creating guild Player Done!');
@@ -174,7 +174,7 @@ export class GuildPlayer {
 			this.idleIntervalFunction = undefined;
 		}
 		// Setup idler
-		this.idleIntervalCountdown = 600;
+		this.idleIntervalCountdown = 6000;
 		this.idleIntervalFunction = setInterval(function(guildPlayer: GuildPlayer) {
 			// If the count down is finished, write some text
 			if (guildPlayer.idleIntervalCountdown < 1) {
@@ -197,12 +197,12 @@ export class GuildPlayer {
 		// Must be done first to prevent recreation of embed
 		globalVars.guildsPlayers.delete(this.guildId);
 
-	if(!this.messageHandle?.deleted){
+	if(this.messageHandle){
 		this.connection.rejoin({ selfDeaf: false,
 			 selfMute: true, 
 			 channelId: this.voiceChannel.id });
-		this.messageHandle!.deleted = true;
-		this.messageHandle!.delete();	
+		this.messageHandle.delete();
+		this.messageHandle = undefined;
 	}
 		this.audioPlayer.removeAllListeners();
 		this.audioPlayer.stop();
@@ -217,7 +217,7 @@ export class GuildPlayer {
 		// After finish play next audio from queue
 		this.audioPlayer.on(AudioPlayerStatus.Idle, async () => {
 			if(this.ready){
-				if(!this.messageHandle?.deleted){
+				if(!this.messageHandle){
 					await this.shiftQueue();
 				}
 				else{
@@ -230,7 +230,7 @@ export class GuildPlayer {
 		this.audioPlayer.on('error', async (error) => {
 			console.log(this.audioPlayer.state);
 			console.error(`Error: ${error.message} with resource}`);
-			if(!this.messageHandle?.deleted){
+			if(this.messageHandle){
 				await this.shiftQueue();
 			}
 			else{
@@ -254,8 +254,9 @@ export class GuildPlayer {
 		await this.messageHandle.react('⏩');
 		await this.messageHandle.react('⏹️');
 		await this.messageHandle.react('⏬');
+		await this.messageHandle.react('❌');
 		const filterReaction = (reaction: MessageReaction) => {
-			return ['⏩', '⏹️', '⏬'].includes(reaction.emoji.name!);
+			return ['⏩', '⏹️', '⏬','❌'].includes(reaction.emoji.name!);
 		};
 
 		// React to emoji reaction
@@ -288,6 +289,9 @@ export class GuildPlayer {
 			}
 			else if(reaction.emoji.name == '⏬'){
 				this.bringDownEmbed();
+			}
+			else if(reaction.emoji.name == '❌'){
+				this.removePlayer();
 			}
 		});	
 
@@ -339,21 +343,24 @@ export class GuildPlayer {
 		}
 		else{
 			message = '';
-			let i = 0;
 			const queueList = this.audioSources.slice(1,);
 			if(queueList.length == 0){
 				message = 'Queue is empty!';
 			}
 			else{
+				// Prepare queue list
+				let i = 0;
 				for (const source of queueList) {
 					i += 1;
 					message += `${i}. ${source.metadata.title}\n`;
+					// Show only 10 entries to keep it looking nice
+					if (i == 10){
+						message += '\n...';
+						break;
+					}
 				}
 			}
-			if (message.length > 1001){
-				message = message.substr(0, 1000);
-				message = message + '\n...';
-			}
+
 			messageEmbed = new MessageEmbed()
 			.setColor('#00ff00')
 			.setAuthor('🔊 Now playing:')
@@ -386,11 +393,13 @@ export class GuildPlayer {
 	// }
 
 	/**
+	 * Delete old player embed and send a new one
 	 * Useful if player embed gets buried in text chat
 	 */
 	async bringDownEmbed(){
 		console.log('Bringind down embed...');
 
+		// I don't need to send new embed because deleting message is caught by event listener
 		this.ready = false;
 		await this.messageHandle!.delete();
 		this.ready = true;
