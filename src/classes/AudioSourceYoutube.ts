@@ -56,6 +56,7 @@ export class AudioSourceYoutube extends AudioSource {
 			path: video.url,
 			description: video.description || placeholder,
 			thumbnail: 'https://i.imgur.com/PzzeprQ.gif' || placeholder,
+			duration: video.duration,
 		};
 	
 		return metadata;

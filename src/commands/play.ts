@@ -44,7 +44,7 @@ module.exports = {
 			message = 'Join voice channel first.';
 			const handle = await interaction.editReply(message);
 			// Delete after 2 seconds
-			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);		
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);		
 			return;
 		} 
 
@@ -56,7 +56,7 @@ module.exports = {
 			message = '❌ Not sufficient permissions!';
 			const handle = await interaction.editReply(message);
 			// Delete after 2 seconds
-			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);		
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);		
 			return;
 		}
 
@@ -85,7 +85,7 @@ module.exports = {
 				message = 'Initializing player...';
 				const handle = await interaction.editReply(message);
 				// Delete after 2 seconds
-				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);	
+				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);	
 				console.log(`Guild ${guildId}: ${message}`);
 				
 				await GuildPlayer.createGuildPlayer(interaction, audioSource);	
@@ -94,7 +94,7 @@ module.exports = {
 				message = 'Sending to queue...';
 				const handle = await interaction.editReply(message);
 				// Delete after 2 seconds
-				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);
+				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);
 				
 				guildPlayer.addToQueue(audioSource, {rejoin: true, interaction: interaction});
 			}
@@ -103,7 +103,7 @@ module.exports = {
 			message = `Something went wrong - try again`;
 			console.error((error as Error).message);
 			const handle = await textChannel.send(message);
-			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 2000, handle);
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);
 		}
 	},
 };

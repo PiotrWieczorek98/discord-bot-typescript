@@ -1,8 +1,8 @@
 import { CommandInteraction, GuildMember, Message, MessageEmbed, MessageReaction, TextChannel, VoiceChannel } from 'discord.js';
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
+import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
 import { AudioSource } from './AudioSource';
-import { wait } from '../functions/wait';
+import AsciiBar from 'ascii-bar'
 
 /**
  * Class responsible for audio player functions in voice channels
@@ -17,10 +17,10 @@ export class GuildPlayer {
 	audioSources: Array<AudioSource>;
 
 	private ready: boolean;
-	private progressBarTimer!: NodeJS.Timer; 
-
-	private idleIntervalFunction!: NodeJS.Timer | undefined;
-	private idleIntervalCountdown!: number; 
+	private idler: {
+		intervalFunction: NodeJS.Timer,
+		countdown: number,
+	} | undefined;
 
 	private constructor(interaction: CommandInteraction){
 		console.log('Initializing constructor...');
@@ -56,7 +56,8 @@ export class GuildPlayer {
 
 		// Display embed message - acts as player view
 		const embed = newGuildPlayer.prepareEmbed();
-		newGuildPlayer.messageHandle = await (interaction.channel as TextChannel).send({embeds:[embed]});
+		const textChannel = (interaction.channel as TextChannel);
+		newGuildPlayer.messageHandle = await textChannel.send({embeds:[embed]});
 
 		// Setup trackers
 		newGuildPlayer.setupTrackers();
@@ -64,19 +65,6 @@ export class GuildPlayer {
 
 		console.log('Creating guild Player Done!');
 		return newGuildPlayer;
-	}
-
-	/**
-	 * Called from event 'messageDelete' when user deletes embed player
-	 * @param guildPlayer 
-	 */
-	async recreateEmbed(){
-		// Display embed message - acts as player view
-		const embed = this.prepareEmbed();
-		this.messageHandle = await (this.textChannel as TextChannel).send({embeds:[embed]});
-
-		// Setup trackers
-		await this.setupTrackers();
 	}
 
 	/**
@@ -120,7 +108,9 @@ export class GuildPlayer {
 	 * Add audio source to guild's queue
 	 * @param source 
 	 */
-	async addToQueue(source: AudioSource, opts?: {rejoin: boolean, interaction: CommandInteraction}){
+	async addToQueue(source: AudioSource, 
+		opts?: {rejoin: boolean, interaction: CommandInteraction}){
+
 		console.log('Adding to queue...');
 		this.audioSources.push(source);
 
@@ -149,8 +139,8 @@ export class GuildPlayer {
 		console.log(`Guild ${this.guildId}: ${message}`);
 
 		// Remove idler
-		if(this.idleIntervalFunction){
-			clearInterval(this.idleIntervalFunction);
+		if(this.idler){
+			clearInterval(this.idler.intervalFunction);
 		}
 		console.log('Adding to queue Done!');
 	}
@@ -160,32 +150,40 @@ export class GuildPlayer {
 	 */
 	async setPlayerIdler(){
 		console.log('Setting Idler...');
+		this.ready = false;
+
+		// Clear queue
+		this.audioSources = [];
+		
 		// Setup message embed
 		const embed = this.prepareEmbed();
-		this.messageHandle?.edit({embeds: [embed]});
+		this.messageHandle!.edit({embeds: [embed]});
 
 		// Stop playback
 		this.audioSources = [];
 		this.audioPlayer.stop();
 
 		// Delete existing idler
-		if(this.idleIntervalFunction){
-			clearInterval(this.idleIntervalFunction);
-			this.idleIntervalFunction = undefined;
+		if(this.idler){
+			clearInterval(this.idler.intervalFunction);
+			this.idler = undefined;
 		}
 		// Setup idler
-		this.idleIntervalCountdown = 6000;
-		this.idleIntervalFunction = setInterval(function(guildPlayer: GuildPlayer) {
-			// If the count down is finished, write some text
-			if (guildPlayer.idleIntervalCountdown < 1) {
-				guildPlayer.removePlayer();
-			  	clearInterval(guildPlayer.idleIntervalFunction!);
+		this.idler = {
+			countdown: 6000,
+			intervalFunction: setInterval(function(guildPlayer: GuildPlayer) {
+				// If the count down is finished, write some text
+				if (guildPlayer.idler!.countdown < 1) {
+					guildPlayer.removePlayer();
+					  clearInterval(guildPlayer.idler!.intervalFunction);
+				}
+				else{
+					guildPlayer.idler!.countdown = guildPlayer.idler!.countdown -1;
+				}
+			  }, 1000, this),
 			}
-			else{
-				guildPlayer.idleIntervalCountdown = guildPlayer.idleIntervalCountdown -1;
-			}
-		  }, 1000, this);
-		  console.log('Setting Idler Done!');
+
+			console.log('Setting Idler Done!');
 		}
 
 	/**
@@ -217,7 +215,7 @@ export class GuildPlayer {
 		// After finish play next audio from queue
 		this.audioPlayer.on(AudioPlayerStatus.Idle, async () => {
 			if(this.ready){
-				if(!this.messageHandle){
+				if(this.messageHandle){
 					await this.shiftQueue();
 				}
 				else{
@@ -260,7 +258,9 @@ export class GuildPlayer {
 		};
 
 		// React to emoji reaction
-		const reactionCollector = this.messageHandle.createReactionCollector({filter: filterReaction, time:600000});
+		const reactionCollector = this.messageHandle.createReactionCollector(
+			{filter: filterReaction, time:600000});
+
 		reactionCollector.on('collect', async (reaction, user) => {
 			// Ignore self reaction
 			if(user.id == globalVars.client.user!.id) return;
@@ -288,35 +288,13 @@ export class GuildPlayer {
 				}
 			}
 			else if(reaction.emoji.name == '⏬'){
-				this.bringDownEmbed();
+				await this.bringDownEmbed();
 			}
 			else if(reaction.emoji.name == '❌'){
 				this.removePlayer();
 			}
 		});	
 
-		// Code below not working as intended
-		// Keep track of sent messages to make player embed always on bottom
-	// 	const messageCollector = this.textChannel.createMessageCollector({ time: 100000 });
-
-	// 	messageCollector.on('collect', async(m) => {
-	// 		await wait(3000);
-	// 		this.textChannel.messages.fetch({ limit: 1 }).then(async messages => {
-	// 			const lastMessage = messages.first();
-	// 			if(this.messageHandle.id != lastMessage!.id){
-	// 				const embed = this.messageHandle.embeds[0];
-	// 				if(!this.messageHandle.deleted){
-	// 					this.ready = false;
-	// 					this.messageHandle.deleted = true;
-	// 					this.messageHandle.delete();
-	// 				}
-	// 				this.messageHandle = await this.textChannel.send({embeds:[embed]});
-	// 				this.setupTrackers();	
-	// 				this.ready = false;
-				
-	// 			}
-	// 		});
-	// 	});
 	console.log('Setting up trackers Done!');
 	}
 
@@ -330,13 +308,14 @@ export class GuildPlayer {
 		// Edit display
 		let messageEmbed: MessageEmbed;
 		const currentlyPlayed = this.audioSources[0];
+
 		if(currentlyPlayed == undefined){
 			messageEmbed = new MessageEmbed()
 			.setColor('#ffff00')
 			.setAuthor('🔈 Nothing is playing right now!')
 			.setTitle('Waiting for entries...')
 			.setThumbnail('https://c.tenor.com/ycKJas-YT0UAAAAM/im-waiting-aki-and-paw-paw.gif')
-			//.addField('Progress:', 'test')
+			.addField('Progress:', 'test')
 			.setTimestamp()
 			.setFooter('Use reactions for interaction!',
 			'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
@@ -366,7 +345,7 @@ export class GuildPlayer {
 			.setAuthor('🔊 Now playing:')
 			.setTitle(currentlyPlayed.metadata.title)
 			.setThumbnail(currentlyPlayed.metadata.thumbnail)
-			//.addField('Progress:', 'test')
+			.addField('Progress:', 'test')
 			.addField('**Queue:**', message, false)
 			.setTimestamp()
 			.setFooter('Use reactions for interaction!',
@@ -378,19 +357,18 @@ export class GuildPlayer {
 		return messageEmbed;
 	}
 
-	// async updateProgressBar(){
-	// 	await wait(1000);
-	// 	if(!this.messageHandle?.deleted){
-	// 		const embed = this.messageHandle!.embeds[0];
-	// 		const fields = embed.fields;
-	// 		const progressBarField = fields[0];
-	// 		progressBarField.value = 'worked';
-	// 		 embed.setFields()
-	// 	}
-	// 	else{
-	// 		clearInterval(this.progressBarTimer);
-	// 	}
-	// }
+	/**
+	 * Called from event 'messageDelete' when user deletes embed player
+	 * @param guildPlayer 
+	 */
+	 async recreateEmbed(){
+		// Display embed message - acts as player view
+		const embed = this.prepareEmbed();
+		this.messageHandle = await (this.textChannel as TextChannel).send({embeds:[embed]});
+
+		// Setup trackers
+		await this.setupTrackers();
+	}
 
 	/**
 	 * Delete old player embed and send a new one
@@ -403,6 +381,6 @@ export class GuildPlayer {
 		this.ready = false;
 		await this.messageHandle!.delete();
 		this.ready = true;
-	
 	}
 }
+

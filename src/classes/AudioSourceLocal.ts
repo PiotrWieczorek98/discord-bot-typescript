@@ -3,7 +3,6 @@ import { CommandInteraction, GuildMember, Message, TextChannel } from 'discord.j
 import { globalVars } from './GlobalVars';
 import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
 import { AudioSource } from './AudioSource';
-import path from 'path/posix';
 
 /**
  * Class used to distinguish audio source

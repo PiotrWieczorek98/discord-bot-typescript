@@ -3,4 +3,5 @@ export interface IAudioSourceMetadata{
     description: string;
 	thumbnail: string;
     path: string;
+    duration?: number;
 }
