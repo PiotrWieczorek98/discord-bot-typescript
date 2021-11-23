@@ -75,13 +75,24 @@ export class GuildPlayer {
 	async playAudio(source: AudioSource){
 		console.log('Starting audio playback...');
 		const resource = source.resource!;
-		this.audioPlayer.play(resource);
+		// Will throw exception on very long videos...
+		try{
+			this.audioPlayer.play(resource);
+			const message = `🔊 Playing: **${source.metadata.title}**`;
+			console.log(message);
+	
+			this.ready = true;
+			console.log('Starting audio playback Done!');
+		}
+		catch{
+			this.shiftQueue();
+			const message = `Error starting audio playback!`;
+			const handle = await this.textChannel.send(message);
+			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);
+			console.log(message);
+		}
 
-		const message = `🔊 Playing: **${source.metadata.title}**`;
-		console.log(message);
 
-		this.ready = true;
-		console.log('Starting audio playback Done!');
 	}
 	
 	/**

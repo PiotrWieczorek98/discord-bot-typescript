@@ -84,7 +84,7 @@ module.exports = {
 			if(guildPlayer == undefined){
 				message = 'Initializing player...';
 				const handle = await interaction.editReply(message);
-				// Delete after 2 seconds
+				// Delete reply after 2 seconds
 				setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);	
 				console.log(`Guild ${guildId}: ${message}`);
 				
