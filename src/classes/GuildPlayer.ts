@@ -328,7 +328,7 @@ export class GuildPlayer {
 			.setThumbnail('https://c.tenor.com/ycKJas-YT0UAAAAM/im-waiting-aki-and-paw-paw.gif')
 			//.addField('Progress:', 'test')
 			.setTimestamp()
-			.setFooter('Sometimes doesn\t work but u mnie działa',
+			.setFooter('Sometimes doesn\'t work but u mnie działa',
 			'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 		}
 		else{
@@ -356,10 +356,10 @@ export class GuildPlayer {
 			.setAuthor('🔊 Now playing:')
 			.setTitle(currentlyPlayed.metadata.title)
 			.setThumbnail(currentlyPlayed.metadata.thumbnail)
-			.addField('Progress:', 'test')
+			//.addField('Progress:', 'test')
 			.addField('**Queue:**', message, false)
 			.setTimestamp()
-			.setFooter('Use reactions for interaction!',
+			.setFooter('Sometimes doesn\'t work but u mnie działa',
 			'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 		}
 

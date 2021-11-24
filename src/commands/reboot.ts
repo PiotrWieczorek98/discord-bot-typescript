@@ -1,7 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandInteraction } from 'discord.js';
-import { globalVars } from '../classes/GlobalVars';
-const {Heroku} = require('heroku-client');
+import request from 'request';
 
 // --------------------------------------------------------------------
 // Restarts Heroku dyno
@@ -19,7 +18,19 @@ module.exports = {
 		const message = 'Rebooting...';
 		await interaction.reply(message);
 		console.log(`Guild ${guildId}: ${message}`);
-		const heroku = new Heroku({ token: process.env['HEROKU_API_TOKEN']! });
-		heroku.delete(`/apps/${globalVars.vars.HEROKU_APP}/dynos/${globalVars.vars.HEROKU_DINO}`);
+		const token = process.env['HEROKU_API_TOKEN']!;
+		const app = process.env['HEROKU_APP']!;
+		request.delete(
+			{
+				url: 'https://api.heroku.com/apps/' + app + '/dynos/',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/vnd.heroku+json; version=3',
+					'Authorization': 'Bearer ' + token
+				}
+			},
+			function(error) {
+				console.log(`Guild ${guildId}: ${error}`);
+			});
 	},
 };
