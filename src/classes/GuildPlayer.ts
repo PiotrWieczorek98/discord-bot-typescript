@@ -22,18 +22,32 @@ export class GuildPlayer {
 		countdown: number,
 	} | undefined;
 
+	private config:{
+		idlerMaxTime: number,
+		reactionsListenerMaxTime: number,
+	};
+
 	private constructor(interaction: CommandInteraction){
 		console.log('Initializing constructor...');
 		this.ready = false;
+
+		this.config ={
+			idlerMaxTime: 3600,
+			reactionsListenerMaxTime: 3600,
+		}
+
 		this.guildId = interaction.guildId;
 		this.audioSources = [];
 		this.voiceChannel = (interaction.member as GuildMember).voice.channel as VoiceChannel;
 		this.textChannel = interaction.channel as TextChannel;
+
 		this.connection = joinVoiceChannel({
 			channelId: this.voiceChannel.id,
 			guildId: this.voiceChannel.guild.id,
 			adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
 		});
+
+
 		this.audioPlayer = createAudioPlayer();
 		console.log('Done!');
 	}
@@ -181,7 +195,7 @@ export class GuildPlayer {
 		}
 		// Setup idler
 		this.idler = {
-			countdown: 6000,
+			countdown: this.config.idlerMaxTime,
 			intervalFunction: setInterval(function(guildPlayer: GuildPlayer) {
 				// If the count down is finished, write some text
 				if (guildPlayer.idler!.countdown < 1) {
@@ -270,7 +284,7 @@ export class GuildPlayer {
 
 		// React to emoji reaction
 		const reactionCollector = this.messageHandle.createReactionCollector(
-			{filter: filterReaction, time:600000});
+			{filter: filterReaction});
 
 		reactionCollector.on('collect', async (reaction, user) => {
 			// Ignore self reaction
