@@ -1,8 +1,7 @@
 import { CommandInteraction, GuildMember, Message, MessageEmbed, MessageReaction, TextChannel, VoiceChannel } from 'discord.js';
-import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from '@discordjs/voice';
 import { globalVars } from './GlobalVars';
 import { AudioSource } from './AudioSource';
-import AsciiBar from 'ascii-bar'
 
 /**
  * Class responsible for audio player functions in voice channels
@@ -45,6 +44,8 @@ export class GuildPlayer {
 			channelId: this.voiceChannel.id,
 			guildId: this.voiceChannel.guild.id,
 			adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+			selfDeaf: false,
+			selfMute: false
 		});
 
 

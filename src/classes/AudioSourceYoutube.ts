@@ -3,7 +3,7 @@ import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
 import * as playDl from 'play-dl';
 import { AudioSource } from './AudioSource';
 import { CommandInteraction } from 'discord.js';
-import YouTube, { Video } from 'youtube-sr';
+import { Youtube, YouTubeSearchResults } from './Youtube';
 
 /**
  * Class used to distinguish audio source
@@ -34,29 +34,37 @@ export class AudioSourceYoutube extends AudioSource {
 		return newInstance;
 	}
 
+	/**
+	 * Search videos through Youtube API
+	 * @param search 
+	 * @returns 
+	 */
 	static async searchYoutube(search:string) {
-	
-		// Search youtube
-		let video: Video;
+		let videos: YouTubeSearchResults[] | undefined;
 		const regex = /\?v=([-_0-9A-Za-z]{11})/i;
 		let regexResult = search.match(regex);
 		if (regexResult) {
-			const url = `https://www.youtube.com/watch${regexResult[0]}`;
-			video = await YouTube.getVideo(url);
+			console.log(`Video ID: ${regexResult[1]}`);
+			const reply = await Youtube.searchById(regexResult[1]);
+			videos = reply?.results;
 		}
 		else{
-			video = await YouTube.searchOne(search);
-	
+			const reply = await Youtube.searchByPhrase(search);
+			videos = reply?.results;
 		}		
+
+		if(videos == undefined){
+			return undefined;
+		}
 	
-		// Create Audio Source
+		// Create Audio Source from first result
+		const video = videos[0];
 		const placeholder = '-placeholder-';
 		const metadata: IAudioSourceMetadata = {
 			title: video.title ||  placeholder,
-			path: video.url,
+			path: video.link,
 			description: video.description || placeholder,
-			thumbnail: 'https://i.imgur.com/PzzeprQ.gif' || placeholder,
-			duration: video.duration,
+			thumbnail: 'https://i.imgur.com/PzzeprQ.gif',
 		};
 	
 		return metadata;
