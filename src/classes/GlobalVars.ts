@@ -1,9 +1,28 @@
 import { Client, Collection } from 'discord.js';
 import { GuildPlayer } from '../classes/GuildPlayer';
-import { IGambleConfig } from '../interfaces/IGambleConfig';
-import { IPaths } from '../interfaces/IPaths';
-import { IVars } from '../interfaces/IVars';
 import { GuildLocalAudioFiles } from './GuildLocalAudioFiles';
+
+export interface IGambleConfig{
+    initialCredits: number,
+    port: string,
+    timeLimit: number,
+    fileGamblersPath: string,
+    fileHistoryPath: string,
+}
+
+export interface IPaths{
+    COMMANDS: string,
+    SOUNDS: string,
+    DATA: string,
+    EVENTS: string,
+}
+
+export interface IVars{
+    CONTAINER_DATA: string,
+    FILE_SOUNDS_CHANNEL: string,
+    FILE_GAMBLERS: string,
+    FILE_BETS: string,
+}
 
 /**
  * Singleton to keep all global variables in one place

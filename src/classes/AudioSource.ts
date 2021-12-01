@@ -1,6 +1,13 @@
 import { AudioResource } from "@discordjs/voice";
 import { CommandInteraction } from "discord.js";
-import { IAudioSourceMetadata } from "../interfaces/IAudioSourceMetadata";
+
+export interface IAudioSourceMetadata{
+    title: string;
+    description: string;
+	thumbnail: string;
+    path: string;
+    duration?: number;
+}
 
 export abstract class AudioSource{
     metadata: IAudioSourceMetadata;

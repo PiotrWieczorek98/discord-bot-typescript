@@ -71,6 +71,9 @@ export interface YouTubeSearchPageResults {
     prevPageToken: string;
 }
 
+/**
+ * Class allows usage of Youtube API v3
+ */
 export class Youtube{
 
     static searchByPhrase(term: string, opts?: YouTubeSearchOptions, cb?: Function) {

@@ -1,7 +1,6 @@
 import { createAudioResource } from '@discordjs/voice';
-import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
 import * as playDl from 'play-dl';
-import { AudioSource } from './AudioSource';
+import { AudioSource, IAudioSourceMetadata } from './AudioSource';
 import { CommandInteraction } from 'discord.js';
 import { Youtube, YouTubeSearchResults } from './Youtube';
 

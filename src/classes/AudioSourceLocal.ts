@@ -1,8 +1,7 @@
-import { AudioResource, createAudioResource, StreamType } from '@discordjs/voice';
+import { createAudioResource, StreamType } from '@discordjs/voice';
 import { CommandInteraction, GuildMember, Message, TextChannel } from 'discord.js';
 import { globalVars } from './GlobalVars';
-import { IAudioSourceMetadata } from '../interfaces/IAudioSourceMetadata';
-import { AudioSource } from './AudioSource';
+import { AudioSource, IAudioSourceMetadata } from './AudioSource';
 
 /**
  * Class used to distinguish audio source
