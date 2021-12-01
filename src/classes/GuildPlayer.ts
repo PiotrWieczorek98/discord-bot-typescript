@@ -125,7 +125,7 @@ export class GuildPlayer {
 			const newSource = this.audioSources[0];
 			await this.playAudio(newSource);
 			const embed = this.prepareEmbed();
-			this.messageHandle?.edit({embeds: [embed]});
+			await this.editEmbed(embed);
 		}
 		console.log('Shifting queue Done!');
 	}
@@ -159,7 +159,7 @@ export class GuildPlayer {
 
 		if(this.messageHandle){
 			const embed = this.prepareEmbed();
-			this.messageHandle.edit({embeds: [embed]});
+			await this.editEmbed(embed);
 		};
 		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
 		console.log(`Guild ${this.guildId}: ${message}`);
@@ -183,7 +183,7 @@ export class GuildPlayer {
 		
 		// Setup message embed
 		const embed = this.prepareEmbed();
-		await this.messageHandle!.edit({embeds: [embed]});
+		await this.editEmbed(embed);
 
 		// Stop playback
 		this.audioSources = [];
@@ -407,6 +407,21 @@ export class GuildPlayer {
 		this.ready = false;
 		await this.messageHandle!.delete();
 		this.ready = true;
+	}
+
+	async editEmbed(embed: MessageEmbed){
+		console.log('Editing message...');
+		try{
+			this.messageHandle!.edit({embeds:[embed]});
+		}
+		catch(error){
+			console.log((error as Error).message);
+			this.messageHandle = await this.textChannel.send({embeds:[embed]});
+			console.log('Repaired message!');
+		}
+		finally{
+			console.log('Editing message done!');
+		}
 	}
 }
 
