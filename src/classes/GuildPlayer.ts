@@ -14,6 +14,7 @@ export class GuildPlayer {
 	textChannel: TextChannel;
 	voiceChannel: VoiceChannel;
 	audioSources: Array<AudioSource>;
+	interaction: CommandInteraction;
 
 	private ready: boolean;
 	private idler: {
@@ -28,6 +29,7 @@ export class GuildPlayer {
 
 	private constructor(interaction: CommandInteraction){
 		console.log('Initializing constructor...');
+		this.interaction = interaction;
 		this.ready = false;
 
 		this.config ={
@@ -101,10 +103,12 @@ export class GuildPlayer {
 		}
 		catch{
 			this.shiftQueue();
-			const message = `Error starting audio playback!`;
+			const message = `Audio resource error. Retrying...`;
 			const handle = await this.textChannel.send(message);
 			setTimeout((messageHandle: Message) => { messageHandle.delete() }, 1000, handle);
 			console.log(message);
+			// Summon command again
+			globalVars.commands.get('play').execute(this.interaction);
 		}
 
 
@@ -409,6 +413,10 @@ export class GuildPlayer {
 		this.ready = true;
 	}
 
+	/**
+	 * Due to some shenanigans message handle likes to sometime throw excpetions
+	 * @param embed 
+	 */
 	async editEmbed(embed: MessageEmbed){
 		console.log('Editing message...');
 		try{
