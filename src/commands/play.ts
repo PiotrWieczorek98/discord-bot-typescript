@@ -30,7 +30,12 @@ module.exports = {
 
 		let message: string;
 		message = `Processing...`;
-		await interaction.reply(message);
+		try{
+			await interaction.reply(message);
+		}
+		catch(error){
+			message = `Retrying...`;
+		}
 
 		const guildId = interaction.guildId!;
 		const textChannel = interaction.channel as TextChannel;

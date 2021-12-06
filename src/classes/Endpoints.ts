@@ -30,7 +30,7 @@ export class WebService {
 		setInterval(()=>{
 		// HTTP GET request to the dyno's url
 		const DYNO_URL = 'https://discord-js-boi-bot.herokuapp.com/ping';
-		fetch(DYNO_URL).then(() => console.log(`Wake up dyno called.`));
+		fetch(DYNO_URL);
 		}, 25 * 60000)
 		});
 	};
