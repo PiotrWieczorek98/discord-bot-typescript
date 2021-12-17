@@ -28,7 +28,7 @@ export class GuildPlayer {
 	};
 
 	private constructor(interaction: CommandInteraction){
-		console.log('Initializing constructor...');
+		console.log('Constructor...');
 		this.interaction = interaction;
 		this.ready = false;
 
@@ -52,7 +52,6 @@ export class GuildPlayer {
 
 
 		this.audioPlayer = createAudioPlayer();
-		console.log('Done!');
 	}
 
 	/**
@@ -61,7 +60,7 @@ export class GuildPlayer {
 	 * @param source
 	 */
 	static async createGuildPlayer(interaction:CommandInteraction, source: AudioSource) {
-		console.log('Creating guild Player...');		
+		console.log('Guild Player creation...');		
 		const newGuildPlayer = new GuildPlayer(interaction);
 		globalVars.guildsPlayers.set(interaction.guildId, newGuildPlayer);
 
@@ -72,16 +71,58 @@ export class GuildPlayer {
 		await newGuildPlayer.addToQueue(source);
 
 		// Display embed message - acts as player view
-		const embed = newGuildPlayer.prepareEmbed();
-		const textChannel = (interaction.channel as TextChannel);
-		newGuildPlayer.messageHandle = await textChannel.send({embeds:[embed]});
+		if(newGuildPlayer.messageHandle == undefined){
+			const embed = newGuildPlayer.prepareEmbed();
+			const textChannel = (interaction.channel as TextChannel);
+			newGuildPlayer.messageHandle = await textChannel.send({embeds:[embed]});
+		}
 
 		// Setup trackers
 		newGuildPlayer.setupTrackers();
 		newGuildPlayer.setupAudioPlayerEvents();
 
-		console.log('Creating guild Player Done!');
 		return newGuildPlayer;
+	}
+
+	/**
+	 * Add audio source to guild's queue
+	 * @param source 
+	 */
+	 async addToQueue(source: AudioSource, 
+		opts?: {rejoin: boolean, interaction: CommandInteraction}){
+
+		console.log('Adding to queue...');
+		this.audioSources.push(source);
+
+		// If this is the first song
+		if(this.audioSources.length == 1){
+			this.playAudio(this.audioSources[0]);
+			this.ready = true;
+		}
+
+		if(opts?.rejoin){
+			// Rejoin to channel (user could switch vc while player is idling)
+			this.voiceChannel = (opts.interaction.member as GuildMember).voice.channel as VoiceChannel;
+			this.textChannel = opts.interaction.channel as TextChannel;
+			this.connection = joinVoiceChannel({
+				channelId: this.voiceChannel.id,
+				guildId: this.voiceChannel.guild.id,
+				adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+			});
+		}
+
+		// Refresh displayed info
+		if(this.messageHandle){
+			const embed = this.prepareEmbed();
+			await this.editEmbed(embed);
+		};
+		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
+		console.log(`Guild ${this.guildId}: ${message}`);
+
+		// Remove idler
+		if(this.idler){
+			clearInterval(this.idler.intervalFunction);
+		}
 	}
 
 	/**
@@ -99,7 +140,6 @@ export class GuildPlayer {
 			console.log(message);
 	
 			this.ready = true;
-			console.log('Starting audio playback Done!');
 		}
 		catch{
 			this.shiftQueue();
@@ -131,48 +171,6 @@ export class GuildPlayer {
 			const embed = this.prepareEmbed();
 			await this.editEmbed(embed);
 		}
-		console.log('Shifting queue Done!');
-	}
-
-	/**
-	 * Add audio source to guild's queue
-	 * @param source 
-	 */
-	async addToQueue(source: AudioSource, 
-		opts?: {rejoin: boolean, interaction: CommandInteraction}){
-
-		console.log('Adding to queue...');
-		this.audioSources.push(source);
-
-		// If this is the first song
-		if(this.audioSources.length == 1){
-			this.playAudio(this.audioSources[0]);
-			this.ready = true;
-		}
-
-		if(opts?.rejoin){
-			// Rejoin to channel (user could switch vc while player is idling)
-			this.voiceChannel = (opts.interaction.member as GuildMember).voice.channel as VoiceChannel;
-			this.textChannel = opts.interaction.channel as TextChannel;
-			this.connection = joinVoiceChannel({
-				channelId: this.voiceChannel.id,
-				guildId: this.voiceChannel.guild.id,
-				adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
-			});
-		}
-
-		if(this.messageHandle){
-			const embed = this.prepareEmbed();
-			await this.editEmbed(embed);
-		};
-		const message = `☑️ **${source.metadata.title}** has been added to the queue`;
-		console.log(`Guild ${this.guildId}: ${message}`);
-
-		// Remove idler
-		if(this.idler){
-			clearInterval(this.idler.intervalFunction);
-		}
-		console.log('Adding to queue Done!');
 	}
 
 	/**
@@ -212,8 +210,6 @@ export class GuildPlayer {
 				}
 			  }, 1000, this),
 			}
-
-			console.log('Setting Idler Done!');
 		}
 
 	/**
@@ -234,7 +230,6 @@ export class GuildPlayer {
 	}
 		this.audioPlayer.removeAllListeners();
 		this.audioPlayer.stop();
-		console.log('Removing player Done!');
 	}
 
 	/**
@@ -279,10 +274,17 @@ export class GuildPlayer {
 		} 
 
 		// Give reactions
-		await this.messageHandle.react('⏩');
-		await this.messageHandle.react('⏹️');
-		await this.messageHandle.react('⏬');
-		await this.messageHandle.react('❌');
+		try{
+			await this.messageHandle.react('⏩');
+			await this.messageHandle.react('⏹️');
+			await this.messageHandle.react('⏬');
+			await this.messageHandle.react('❌');
+		}
+		catch(error){
+			console.log('Error while reactiong to message!');
+			return;
+		}
+
 		const filterReaction = (reaction: MessageReaction) => {
 			return ['⏩', '⏹️', '⏬','❌'].includes(reaction.emoji.name!);
 		};
@@ -293,9 +295,9 @@ export class GuildPlayer {
 
 		reactionCollector.on('collect', async (reaction, user) => {
 			// Ignore self reaction
-			if(user.id == globalVars.client.user!.id) return;
-			
-
+			if(user.id == globalVars.client.user!.id) {
+				return;
+			}
 			// Remove reaction by user
 			const userReactions = this.messageHandle!.reactions.cache.filter(reaction => 
 				reaction.users.cache.has(user.id));
@@ -324,8 +326,6 @@ export class GuildPlayer {
 				this.removePlayer();
 			}
 		});	
-
-	console.log('Setting up trackers Done!');
 	}
 
 	/**
@@ -381,9 +381,6 @@ export class GuildPlayer {
 			.setFooter('Sometimes doesn\'t work but u mnie działa',
 			'https://cdn.discordapp.com/avatars/200303039863717889/93355d2695316c6dc580bdd7a5ce8a04.webp');
 		}
-
-
-		console.log('Preparing embed Done!');
 		return messageEmbed;
 	}
 
@@ -409,7 +406,12 @@ export class GuildPlayer {
 
 		// I don't need to send new embed because deleting message is caught by event listener
 		this.ready = false;
-		await this.messageHandle!.delete();
+		try{
+			await this.messageHandle!.delete();
+		}
+		catch(error){
+			console.log('Error while deleting message!');
+		}
 		this.ready = true;
 	}
 
@@ -420,15 +422,12 @@ export class GuildPlayer {
 	async editEmbed(embed: MessageEmbed){
 		console.log('Editing message...');
 		try{
-			this.messageHandle!.edit({embeds:[embed]});
+			await this.messageHandle!.edit({embeds:[embed]});
 		}
 		catch(error){
+			console.log('Repairing message...');
 			console.log((error as Error).message);
 			this.messageHandle = await this.textChannel.send({embeds:[embed]});
-			console.log('Repaired message!');
-		}
-		finally{
-			console.log('Editing message done!');
 		}
 	}
 }
