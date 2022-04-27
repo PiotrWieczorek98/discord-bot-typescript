@@ -10,6 +10,6 @@ Luigi: **Hello Mario. The bot just works.**
 
 ![Alt Text](https://media1.tenor.com/images/9e09299b9c3f388d5a089c4971bc33b9/tenor.gif?itemid=25523805)
 
-![Alt Text](https://media.tenor.com/images/8572680eb172575050177eb1a7613164/tenor.gif)
+![Alt Text](https://media1.tenor.com/images/9637d7cf7ce45c8b4e884712d5c6863f/tenor.gif?itemid=25523806)
 
-![Alt Text](https://media.tenor.com/images/b988e4f5e000c23c45917552bf8e8317/tenor.gif)
+![Alt Text](https://media1.tenor.com/images/47ca9e882278db65247dd1531f416d95/tenor.gif?itemid=25523807)
