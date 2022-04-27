@@ -1,5 +1,5 @@
 # Introducing BOI THE BOT ~~JavaScript~~ TypeScript edition
-## It makes sense now! 🙍🏿‍♂️🔫👮🏻‍♂️
+## It makes sense now! ඞ
 
 ![Alt Text](https://c.tenor.com/u_uk_vEg_QIAAAAd/cute-dog.gif)
 
@@ -8,4 +8,6 @@ Mario: 𝐻𝑒𝓇𝑒𝓈-𝒶   𝓂𝓎   𝒷𝓇𝑜𝓉𝒽𝑒𝓇   �
 
 Luigi: **Hello Mario. The bot just works.**
 
-![Alt Text](https://media.discordapp.net/attachments/201310400191397888/876586912582873098/jfgztgjfz.gif)
+![Alt Text](https://i.imgur.com/q2XWEIz.mp4)
+![Alt Text](https://i.imgur.com/Cu7Uaj4.mp4)
+![Alt Text](https://i.imgur.com/q2XWEIz.mp4)
