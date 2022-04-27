@@ -9,5 +9,7 @@ Mario: 𝐻𝑒𝓇𝑒𝓈-𝒶   𝓂𝓎   𝒷𝓇𝑜𝓉𝒽𝑒𝓇   �
 Luigi: **Hello Mario. The bot just works.**
 
 ![Alt Text](https://media1.tenor.com/images/9e09299b9c3f388d5a089c4971bc33b9/tenor.gif?itemid=25523805)
+
 ![Alt Text](https://media.tenor.com/images/8572680eb172575050177eb1a7613164/tenor.gif)
+
 ![Alt Text](https://media.tenor.com/images/b988e4f5e000c23c45917552bf8e8317/tenor.gif)
